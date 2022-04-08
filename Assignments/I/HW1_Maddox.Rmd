@@ -1,0 +1,87 @@
+---
+title: "Homework #1, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+
+## Problem 1 (make sure to include code with outputs)
+
+1. I will study the vegetarian variable, which takes on two categories: yes ("y") and no ("n"):
+
+```{r, fig.height=3.5}
+id <- "1IACzOQWcpvKqf3YnGye0qQOF2mtd42nK"
+fl_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+table(fl_data$vegetarian)
+barplot(table(fl_data$vegetarian), ylab="Frequency", main="Student Vegetarianism")
+```
+
+The majority of students were non-vegetarians (51) whilst only 15% were vegetarian (9).
+
+2. I will study the college gpa variable, which is a continuous variable on an interval from 0.0 to 4.0 inclusive (though the min for this sample is 2.6):
+
+```{r, fig.height=3.5}
+table(fl_data$college_GPA)
+summary(fl_data$college_GPA)
+barplot(table(fl_data$college_GPA), ylab="Frequency", xlab="GPA", main="Student GPA Breakdown")
+hist(fl_data$college_GPA, xlab="GPA range", main="Student GPA Breakdown")
+```
+
+The distribution of the continuous college_gpa variable appears to be bimodal (with 3.0 and 3.5 being the modes) with a slight skew to the left (the mean is 0.047 smaller than the median with respect to a value range from [2.6, 4.0]. 
+
+## Problem 2
+
+**1.7** 
+
+a) 3077 people who responded;
+
+b) All adults in the United States;
+
+c) 23%.
+
+**1.8**
+
+a) Sample: 1200 Floridians who participated in the poll;
+   Population: All adult Floridians in the United States in 2006;
+
+b) The poll does not survey the entire population, therefore the poll-reported percentages are quoted statistics of the sample which provide an estimate for the population parameter. 
+
+**1.9** 
+
+a) A graduate student;
+
+b) A few students from a particular graduate program;
+
+c) All students from that graduate program.
+
+**1.10** 
+
+a) Sample: The randomly selected citizens in the polled countries;
+   Population: All citizens in the polled countries;
+
+b) The poll does not survey the entire population, therefore the reported percentages are sample statistics, which provide an estimate for the population parameter.
+
+**2.3**
+
+a) Quantitative;
+
+b) Categorical;
+
+c) Categorical;
+
+d) Quantitative.
+
+**2.6**
+
+a) Continuous;
+
+b) Discrete;
+
+c) Continuous;
+
+d) Discrete.

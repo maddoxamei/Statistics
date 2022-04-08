@@ -1,0 +1,219 @@
+---
+title: "Homework #4, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+```{r}
+association.stats <- function(var.explanatory, var.response, name = NULL){
+  if( !is.null(name) ) print(name)
+  lm.obj <- lm(var.response~var.explanatory)
+  cat( "\t R^2:", round(summary(lm.obj)$r.squared,2), "\n")
+  cat( "\t Correlation:", round(cor(var.explanatory, var.response),2), "\n")
+  cat("\t", "Least Squares Regression: y-hat =",paste(round(lm.obj$coefficients,2), c("+","* x")), "\n")
+  
+  return(lm.obj)
+}
+
+association.pot.outliers <- function(var.explanatory, lm.obj){
+  # Identify outliers for the explanatory variable
+  pot.expl.outliers <- boxplot.stats(var.explanatory)$out
+  
+  # Identify potential regression outliers
+  #pot.regr.outliers <- (lm.full$residuals %in% boxplot.stats(lm.full$residuals)$out)
+  pot.regr.outliers <- (lm.obj$residuals > mean(lm.obj$residuals)+3*sd(lm.obj$residuals)) | (lm.obj$residuals < mean(lm.obj$residuals)-3*sd(lm.obj$residuals))
+  
+  return(list(expl=pot.expl.outliers, regr=lm.obj$residuals[pot.regr.outliers]))
+}
+
+association.go <- function(var.explanatory, var.response, xlab, ylab, olab=NULL, main=NULL, subset=NULL, subset.name = NULL){
+
+  lm.full <- association.stats(var.explanatory, var.response, "marginal")
+  
+  # Defaults: Every observation is a filled black circle
+  pch <- rep(19, length(lm.full$residuals))
+  col <- rep("black", length(lm.full$residuals))
+  
+  # If subsetted data is provided by the user, do calculations on it
+  if( !is.null(subset) ){
+    lm.reasonable <- association.stats( var.explanatory[!subset], var.response[!subset], subset.name )
+    
+    pch[subset] <- 1
+    col[subset] <- "white"
+    
+    # Identify potential outliers
+    pot.outliers <- association.pot.outliers(var.explanatory[!subset], lm.reasonable)
+    # pot.outliers <- list()
+    # pot.outliers$expl <- ifelse(!subset, pot.sub.outliers$expl, FALSE)
+    # print(urb_group[!subset])
+    # print(var.explanatory[pot.outliers$expl])
+  }else pot.outliers <- association.pot.outliers(var.explanatory, lm.full)
+  
+  pot.expl.outliers <- var.explanatory %in% pot.outliers$expl
+  pot.regr.outliers <- lm.full$residuals %in% pot.outliers$regr
+  
+  # Identify outliers for the explanatory variable and denote them as empty black circles
+  pch[pot.expl.outliers] <- 1
+  
+  # Identify potential regression outliers and color them white (denoted by purple text)
+  col[pot.regr.outliers] <- "white"
+  
+  # Identify which regression outliers might be potential influential observations (denoted by red text). Already colored white by prev. line.
+  pot.influencers <- pot.expl.outliers & pot.regr.outliers
+  
+
+  # Plot all the observations and corresponding trendline
+  plot(var.response~var.explanatory, main=main, xlab=xlab, ylab=ylab, cex=1.5, pch=pch, col=col )
+  abline(lm.full,col="red",lwd=5)
+  
+  # If subsetted data is provided by the user
+  if( !is.null(subset) ){
+    # Draw an adjusted trendline
+    abline(lm.reasonable,col="blue",lwd=5)
+    # Label subsetted data
+    text(var.response~var.explanatory, subset=subset, labels=olab)
+  } 
+  
+    # Indicate potential regression outliers with purple text
+    if( any(pot.regr.outliers) ) text(var.response~var.explanatory, subset=pot.regr.outliers, labels=olab, col="purple")
+    # Indicate potential influential observations with red text label
+    if( any(pot.influencers)) text(var.response~var.explanatory, subset=pot.influencers, labels=olab, col="red")
+}
+```
+#### Interpreting the graphs
+
+**Potential explanatory outliers:** This does NOT mean they are actually outliers.
+  -*Identification*: observations as identified by the IQR method.
+  -*Indication*: empty black circles. 
+  
+**Potential regression outliers:** This does NOT mean they are actually regression outliers.
+  -*Identification*: observations whose residual lies further than 3 standardiaztions from the mean of all residuals.
+  -*Indication*: purple-colored text-based points where the text corresponds to the label of said observation. 
+  
+**Potential influential observations:** This does NOT mean they are actually influential observations.
+  -*Identification*: potential regression outliers which have also been flagged as potential explanatory outliers.
+  -*Indication*: red-colored text-based points where the text corresponds to the label of said observation. 
+  
+**Influential observations:** 
+  -*Identification*: Mei deems them as influential observations after viewing the plot.
+  -*Indication*: black-colored text-based points where the text corresponds to the label of said observation. 
+  
+**Trendlines:**
+  -*Red-colored*: the least squares linear regression line between the expl. var and the resp. var when including all observations in the linear model.
+  -*Blue-colored*: the least squares linear regression line between the expl. var and the resp. var when accounting for only select observations in the linear model.
+
+## Problem 1 (make sure to include code with outputs)
+
+```{r}
+fl_crime <- read.csv("https://img1.wsimg.com/blobby/go/bbca5dba-4947-4587-b40a-db346c01b1b3/downloads/fl_crime.csv?ver=1631633769964")
+colnames( fl_crime ) <- sub("\\..*", "", colnames(fl_crime))
+association.go(fl_crime$education, fl_crime$crime,"education level","crime rate", fl_crime$county, "Crime against Education")
+```
+
+3. The education level explains approx. 22 $R^2=0.22$ percent of variety in crime.
+
+4.
+```{r}
+see.basic <- sum( (fl_crime$crime-mean(fl_crime$crime))^2 )
+see.regr <- sum( (fl_crime$crime-predict(lm(fl_crime$crime~fl_crime$education)))^2 )
+round((see.basic-see.regr)/see.basic,2)
+```
+The hard-coded $R^2$ value is the same as earlier when using using the built-in formula.
+
+5. 
+```{r}
+x <- fl_crime$education
+predict(lm(fl_crime$crime~x), newdata = data.frame(x = c(70, 35)))
+summary(fl_crime$education)
+```
+The predicted crime rate for an education level of 70 (approx. 53.16), is trustworthy because it is an interpolation between variables of medium strength association (correlation approx. 0.47). In other words, it makes a prediction for an education level that lies within the range of education levels accounted for in the creation of the linear model. In contrast, the predicted crime rate for an education level of 35 (approx. 1.15), is not trustworthy because it is an extrapolation (opposite of interpolation).
+
+
+## Problem 2 (make sure to include code with outputs)
+
+2.d. 
+```{r, fig.height=3.5}
+id <- "1w6NhSbY6Y8e-UQFgW1v4-JHvOU1P3rUv"
+broadband_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+association.go(broadband_data$GDP,broadband_data$Broadband/1000,"GDP (thousands USD)","broadband subscribers", broadband_data$Country, "Broadband against GDP")
+```
+The $R^2$ value between the broadband and GDP of a country is approximately 0.59. A countrys' GDP accounts for approx. 59 percent of the variety in the number of its broadband subscribers.
+
+## Problem 3
+
+1.
+```{r}
+# Although the below statements end up subsetting equally, the second proves that it can be hard-coded into desired intervals
+subdivisions <- split(fl_crime, cut(fl_crime$urbanization, 3))
+subdivisions <- split(fl_crime, cut(fl_crime$urbanization, c(min(fl_crime$urbanization),33, 66, max(fl_crime$urbanization)), include.lowest = T))
+names(subdivisions) <- c("Rural" ,"Suburban", "Urban")
+```
+
+2. The red line represents the trendline for the overall crime-education linear relationship. The blue line represents the trendline for the crime-education linear relationship conditioning on the urbanization group. 
+```{r}
+#par(mfrow=c(1,3))
+for( name in names(subdivisions) ){
+  division <- subdivisions[[name]]
+  association.go(fl_crime$education,fl_crime$crime,"education level","crime rate", main = name, subset = !fl_crime$county %in% division$county, subset.name = name )
+}
+#par(mfrow=c(1,1))
+```
+
+3. The direction of the overall crime-education linear relationship changed after conditioning on urbanization for the suburban and urban groups. The correlations also changed directions. This is expected as the sign of a correlation value is indicitive of the linear relationship direction. The direction of the correlation (and by extention overall crime-education linear relationship) remained the same for the rural group.
+
+4. When conditioning on a third variable result changes the overall direction of a linear relationship, the phenomina is called simpson's paradox. In this case, the third variable is urbanization. Because it was a variable observed in the dataset, it is called a confounder.
+
+5. Below is the interpretations. See the output under "Urban" for corresponding values.
+  - *R^2*: An urban county's education level accounts for approx. 1 percent of the variety in crime
+  - *Y-Intercept*: For urban counties with an education level of 0, the crime rate will be 118.34, on average. Although the positive crime rate is an improvement, the y-intercept is still an extrapolation far outside the observed education levels. Without knowing the exact units of the crime rate (number of arrests?) I'd say not to trust the intercept.
+  - *Slope*: Per 1-unit increase in education in urban counties, the crime rate in those counties decreases by -0.58, on average.
+  
+6. Influencial observations are observations which are residual outliers and also education level outliers. Only the urban group appears to have 3 notable education level outliers: 65, 66, 68. They do NOT appear to be residual outliers as the other observations seem to have consistent variability from the trendline, with 4 other observations that seem to have similar residuals. Furthermore, education 65 and 66 have appear to be equally distanced from the trendline but on opposite sides. This equates to equal but opposite effects on the overall residual sum (which is used to determine the line). In other words, removing them from the dataset (as sometimes done with influencial outliers in models where there is an easy explaination as to why the model has such outlier) wouldn't affect the trend. The other common method to handle influencial outliers is to model the trend with a more complex modle (e.g. multiple linear regression).
+
+
+## Problem 4
+
+1.There appears to be one regression outlier: China. Removing this regression outlier increases the correlation value by $0.98-0.77=0.21$. In other words, removing the outlier allowed for the model to find a linear regression line which more strongly associates the GDP and the number of broadband subscribers.
+```{r}
+association.go(broadband_data$GDP,broadband_data$Broadband/1000,"GDP (thousands USD)","broadband subscribers", broadband_data$Country, "Broadband against GDP (no outlier)", broadband_data$Country=="China", subset.name = "no regression outliers")
+```
+ 
+
+2. The least squares regression line which includes the China observation (a) is colored red. The least squares regression line which excludes the China observation (b) is blue. Because the China observation was a regression outlier AND had an outlier x-value, it became an influential observation which heavily affected the (a) trendline, drawing it closer to itself (higher). The (b) trendline does not suffer from this because it does not include China in its model. Therefore, the slope is less steep. I would trust the slope of (b) more because it isn't being affected by an influential observation and therefore more accurately represents the other points on average.
+
+## Problem 5
+
+**3.91**
+
+a) Gender could be a possible lurking variable for the positive correlation between height and income. Men are taller than woman on average. Men are also shown to be paid more than women, on average. Therefore gender influences the height variable AND the income variable, causing a positive correlation between height and income.
+
+b) If gender had been one of the variables measured in the study, it would be a confounding variable. Both lurking and confounding variables are extraneous determinates (3rd variables) which influence both the explanatory and response variable and oftentimes explains the correlation found between spurious associations. The difference between the two lies in whether or not that variable was mesasured in the study or not. Lurking variables are the ones which are NOT included. Confounding are the ones which are. 
+
+**3.92**
+
+a) Although there is a negative association between television ownership and lower birth rate, this is not a causational relationship. 
+
+b) It is possible that the country's modernization level is a potential lurking variable. Developing countries and/or countries without much infastructure or automation rely on more manual labor and do not have access to birth control or contraceptives. These both leads to larger families and thus higher birth rates. More modern contries have access to these and therefore are more likely to have tv's in everyday homes.
+
+**4.2**
+
+a) This is an observational study because the researchers were only observing the subjects habits and did NOT impose any treatments (i.e. forcing some subjects to binge drink while others to not).
+
+b) The explanatory variable is a categorical variable: high blood pressure + binge drinking vs. normal blood pressure + don't drink. The response variable is the mortality rate due to stroke or heart attack.
+
+c) The study does NOT prove that a combination of high blood pressure and binge drinking causes an increased risk of death by heart attack or stroke. Observational studies cannot establish causal relationships due to potential lurking variables affecting the results. 
+
+**4.3**
+
+a) The explanatory variable was the type of diet. The response variable was amount of weight loss in pounds.
+
+b) This study was an experimental study because the subjects were randomly assigned to different treatments: low-carb vs low-fat diet.
+
+c) Experimental studies are more conducive to conferencing causality because the random assignment of treatments theoretically increases the chances that differences observed between the groups is due to the treatment and not any characteristics of the subjects or users who operate in the background. Therefore, it is appropriate to recommend someone trying to loose weight to implement a low-carb diet over a low-fat diet.

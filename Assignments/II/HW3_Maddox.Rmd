@@ -1,0 +1,165 @@
+---
+title: "Homework 3"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+library(dplyr)
+library(ggplot2)
+```
+
+
+## Submit the solution in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide all relevant code and output. Goal of this homework is to have you 1) familiarized $X^2$-test of independence for contingency tables; 2) familiarized with permutation test for contingency tables; 3) interpretation of linear regression; 4) practice your R coding.
+
+
+# Problem #1
+
+  1. Code up your own `my.permutation.test()` function to conduct permutations tests on contingency tables. 
+  
+  As inputs, it should take
+  
+      - data frame with two categorical variables as columns (first one - explanatory, second one - response)
+      - # of randomly generated permutations to be executed.
+      
+  As outputs, it should provide
+  
+      - contingency table for the data frame
+      - permutation p-value
+      - plot the histogram of permutation distribution for $X^2$ statistic
+    
+```{r}
+my.permutation.test <- function(data, n){
+  data <- data %>% as.data.frame()
+  contingency.table <- data %>% table
+  
+  values <- sapply(1:n, function(x){
+    table <- data.frame(sample(data[,1]), data[,2]) %>% table()
+    chisq.test(table)$statistic
+  })
+
+  x.2 <- chisq.test(contingency.table)$statistic
+  p.value <- sum( values >= x.2 )/n
+
+  plot <- values %>% as.data.frame() %>%
+    ggplot(aes(.)) +
+      geom_histogram(aes(y=..count../n), binwidth = 0.2, fill = "lightblue") +
+      stat_function(fun = dchisq, 
+                    args = list(df = (nrow(contingency.table)-1)*(ncol(contingency.table)-1)), 
+                    color = "darkred", size = 1) +
+      geom_vline(xintercept=x.2) +
+      ggtitle("Chi-Squared Distribution") +
+      annotate(x=+Inf,y=+Inf,hjust=1,vjust=1,
+               label=sprintf("Chi-Squared = %0.2f",x.2), geom="label") +
+      annotate(x=+Inf,y=+Inf,hjust=1,vjust=2,
+               label=sprintf("p-value = %0.2f",p.value), geom="label")
+
+  list( table = knitr::kable(stats::addmargins(contingency.table), caption = "Contingency Table"),
+     plot = plot,
+     p.value = p.value
+     )
+}
+```
+  
+  2. Proceed to apply the my.permutation.test() function (and subsequently interpret the results) to:
+  
+  - Snowden data (from the lecture), with 10, 000 permutations. What’s the conclusion? Compare the resulting histogram with the one in the slides (they should be roughly similar).
+```{r echo=FALSE}
+student.status <- c(rep("US", 12), 
+                    rep("Intl", 8))
+opinion <- c("Hero", rep("Criminal", 9), rep("Neither", 2), 
+             rep("Hero", 5), rep("Criminal", 2), rep("Neither", 1))
+results <- data.frame(student.status, opinion) %>%
+  my.permutation.test(10000)
+results$table
+results$plot
+```
+The resulting histogram is similar to the one on the slides.
+
+  - Airbnb data (from previous HW), with just 1, 000 permutations. What’s the conclusion? Compare the shape of resulting histogram with the density of $X^2$ distribution with appropriate degrees of freedom. What does it tell us about whether $X^2$-test results from previous HW were appropriate for Airbnb data?
+  
+```{r echo=FALSE}
+results <- readr::read_csv(sprintf("https://docs.google.com/uc?id=%s&export=download", "1au2tYZUtxb1AHckSTkdTthQB5OIKWJR8")) %>% select(room_type, neighbourhood_group) %>% my.permutation.test(1000)
+results$table
+results$plot
+```
+With axes so large it is hard to say definitively, but the histogram appears to roughly follow the density $X^2$ distribution with the appropriate degrees of freedom, besides the higher than expected volume of values closer to 0. This indicates that the $X^2$-test results from the previous HW are appropriate. 
+  
+# Problem #2
+
+In Advertisement.csv data set, proceed to study the relationship between the sales and radio advertising expenses. In particular, proceed to
+
+```{r}
+df <- readr::read_csv(sprintf("https://docs.google.com/uc?id=%s&export=download", "1UJIu7Ku3rRWTnFJpK4uLQ2DXW8DjfgtT"))
+```
+
+  **1.** _Plot their relationship. Does linear regression appear as appropriate model here?_
+  
+```{r echo=FALSE}
+ggplot(df, aes(x=radio, y=sales)) + geom_point() + geom_smooth(method='lm')
+```
+  Although the points are very spread, they do seem to slightly follow a linear trend, thus making the usage of a linear regression model appropriate.
+  
+  **2.** _Regardless of the answer to Part 1, proceed to fit the linear regression and write down the fitted model equation._
+```{r}
+lm <- lm(sales~radio, data=df)
+```
+  Sales = `r lm$coefficients[1]` + `r lm$coefficients[2]`TV
+
+  **3.** _Interpret both the slope and the intercept._
+  
+    - slope: Per 1000 dollar increase in radio advertisement, the number of items sold increases by `r as.integer(lm$coefficients[2]*1000)` items
+    - intercept: For companies who spend 0 dollars on radio advertisement, the number of items sold is `r as.integer(lm$coefficients[1]*1000)`, on average.
+  
+  **4.** _Provide and interpret the prediction for a 50,000 investment into this advertisement media._
+  For companies who spend 50,000 dollars on radio advertisement, the number of items sold is `r as.integer(predict(lm, data.frame(radio=c(50)))*1000)`, on average.
+  
+  **5.** _Report and interpret the Residual Standard Error (RSE)_
+  Our predicted Sales miss the true Sales by `r summary(lm)$sigma*1000` items, on average 
+  
+  **6.** _Report and interpret the $R^2$ statistic_
+  Our linear regression model with radio advertisement as a predictor explains `r summary(lm)$r.squared*100` percent of variety in Sales.
+  
+# Problem #3
+
+  1. Proceed to write your own function which will calculate $\beta_0$ and $\beta_1$ estimates given vectors $X$ and $Y$ as input.
+```{r}
+coef.calculation <- function(x, y){
+  x.mean <- mean(x)
+  y.mean <- mean(y)
+  beta.1 <- sum( (x - x.mean)*(y - y.mean) ) / sum( (x - x.mean)^2 )
+  beta.0 <- y.mean - beta.1 * x.mean
+  
+  c(beta.0 = beta.0,
+    beta.1 = beta.1)
+}
+```
+
+```{r}
+coef.calculation(df$TV, df$sales)
+lm(sales~TV, data = df)
+```
+
+  2.Write your own function that, for a simple linear regression will calculate Risidual Standard Error (RSE) and $R^2$ statistic given vectors $X$ and $Y$ as input.
+```{r}
+my.lm <- function(x, y){
+  lm <- lm(y~x)
+  rss <- sum(lm$residuals^2)
+  
+  c(rse = sqrt( rss / (length(lm$residuals) - 2) ),
+    r.squared = (sum( (y - mean(y))^2 ) - rss) / sum( (y - mean(y))^2 )
+  )
+}
+```
+
+```{r}
+my.lm(df$TV, df$sales)
+lm(sales~TV, data = df) %>% summary()
+```
+
+  

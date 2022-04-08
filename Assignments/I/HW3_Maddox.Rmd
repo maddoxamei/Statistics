@@ -1,0 +1,119 @@
+---
+title: "Homework #3, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+```{r}
+association.calculate <- function(var.explanatory, var.response, xlab, ylab, olab=NULL){
+  
+  if( !is.null(olab) ) type <- "n"
+  else type <- "p"
+  
+  print( paste("Correlation:",cor(var.explanatory, var.response)) )
+
+  lm.obj <- lm(var.response~var.explanatory)
+  print( paste(c("Intercept:","Slope:"), lm.obj$coefficients) )
+
+  plot(var.response~var.explanatory, xlab=xlab, ylab=ylab, type=type)
+  abline(lm.obj,col="red",lwd=5)
+  abline(h=mean(var.response),v=mean(var.explanatory),col="blue",lty=2,lwd=3)
+  text(var.response~var.explanatory, labels=olab)
+}
+```
+
+
+## Problem 1 (make sure to include code with outputs)
+
+```{r}
+fl_crime <- read.csv("https://img1.wsimg.com/blobby/go/bbca5dba-4947-4587-b40a-db346c01b1b3/downloads/fl_crime.csv?ver=1631633769964")
+association.calculate(fl_crime$education...., fl_crime$crime.rate..per.1000.,"education","crime", fl_crime$county)
+```
+
+1. Larger education values appear to be occurring more frequently with larger crime. There are a few unusual observations, namely the Miami-Dade observation with high crime (120) for relatively below average education (65). Despite the unusual observations, this pattern can be reasonably represented by a straight line. 
+
+2. The correlation between crime and education is approximately 0.4669. The positive value of the correlation entails a possitive linear association which is supported by larger education values occuring more frequently with larger crime values. The value of the correlation can also be used to determine the strength of the linear association. This value falls near the middle of the 0 to 1 range, indicating a medium strength. This is supported by the plot as there is a relatively consistant variability of observations around the trendline.
+
+3. The linear equation of the trend line is crime = 1.48 x (education) - 50.86. 
+Interpretations:
+  - *Intercept*: For counties with 0 education, the crime will be -50.86, on average. The intercept is an extrapolation of education values. This results in a value for crime which cannot exist. Logically, one can only have no crime or crime. It is impossible to have negative crime.
+  - *Slope*: For a 1-unit increase in education, crime will increases by 1.48, on average.
+
+## Problem 2 (make sure to include code with outputs)
+
+1. 
+```{r, fig.height=3.5}
+id <- "1w6NhSbY6Y8e-UQFgW1v4-JHvOU1P3rUv"
+broadband_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+association.calculate(broadband_data$GDP,broadband_data$Broadband/1000,"GDP","broadband", broadband_data$Country)
+```
+The correlation between the broadband and GDP of a country is approximately 0.77. The positive value of the correlation entails a possitive linear association which is supported by larger GDP values occuring more frequently with larger broadband values. The strength of the linear association is high, as indicated by the correlation value being located closer to 1 and all but 3 observations (China, US, and Japan) hugging the trendline.Japan, although not hugging the trendline, is still a reasonable observation. The only unusual observations are China and the US. Excluding the unusual data points from the plot provides a better view on how close the resonable observations lie to the trendline.
+```{r}
+reduced <- !broadband_data$Country %in% c("China", "United States")
+association.calculate(broadband_data$GDP[reduced],broadband_data$Broadband[reduced],"GDP","broadband")
+```
+
+
+2. The linear equation of the trend line is broadband = 8.18875 x (GDP) - 50.86. 
+Interpretations:
+  - *Intercept*: For countries with 0 GDP, the number of broadband subscribers will be 1292.55082 thousands, on average. Having 0 GDP means there is no tracked monetary-based economy (no buying/selling of goods or services with money). In other words, the economy is only stimulated by black-market activities, bartering, or unpaid work. All countries recognized by the UN have some form of currency. It would be impossible to have a UN recognized country with 0 GDP. Even if 0 GDP was possible, it wouldn't make sense on how broadband could be established. Broadband is provided through for-profit companies. There would need to be some sort of non-sketchy payment recieved by the companies otherwise they'd be under review for mal-practice or the board would be questioning the value of remaining in said countries.Therefore, the intercept interpretation does not make sense and should not be trusted.
+  - *Slope*: For a 1-point increase in GDP, broadband subscribers will increases by 8.18875 thousands, on average.
+
+
+## Problem 3
+
+**3.14**
+
+a) Correlation is measured on a range from -1 to 1. The magnitude of a correlation value is indicative of association strength: 0, no association to 1, very strong association. There is a very weak linear associationbetween political ideology and reading a newspaper because the its magnitude of the -0.07 correlation value (0.07) is close to zero.
+
+b) Since we know that magnitude of correlation is indicative of association strength, we can compare association strength through the comparison of correlation values. For that particular sample, religiosity seems to have a stronger association with political ideology than reading a newspaper. This is because the magnitude of correlation between political ideology and religiosity (0.5) is 0.43 larger than between political ideology and newspaper reading. 
+
+**3.16**
+
+1) r=-0.9; c
+
+2) r=-0.5; a
+
+3) r=0; d
+
+4) r=0.6; b
+
+**3.26**
+
+a) yhat = 9.2 + 77x
+  i) A house with 2000 sqft would sell for $9.2+77*2=163.2$ thousand dollars, on average.
+  ii) A house with 3000 sqft would sell for $9.2+77*3=240.2$ thousand dollars, on average.
+  
+b) Per 1000 square footage increase in the house, the selling price increases by 77 thousand dollars, on average.
+
+c) The correlation between these variables is positive because the association is positive. The association is positive because the slope of the linear equation, which represents the trend line, is positive. The positive slope indicates larger x values are more likely to occur with larger y values.
+
+d) The predicted selling price of a house with 3000 sq ft is 240.2 thousand dollars (see part a). The actual selling price was 300 thousand dollars. The residual is the difference between the actual selling price and the predicted selling price of the 3000 sq ft house. In this case, the 3000 sq ft house sold for $300-240.8=59.2$ thousand more dollars than it was initially estimated for.
+
+**3.70**
+
+a) let dvatl mean "data variability about the trendline"
+  i) b
+  ii) c; slope has most gradual descent (-2.36) and the most dvatl (r=-0.44) 
+  iii) a; y-intercept lowest (12.8) and least dvatl (r=-0.87)
+  
+b) There appears to be a negative association between carried dust and rainfall amounts (all correlation values are negative). In other words, the larger amounts of rainfall are more likely to occur with smaller amouns of dust carried. Region a has the strongest association (highest magnitude of correlation), followed by region b, and lastly reason c (smallest magnitude of correlation)
+
+**3.83**
+
+annual income (in dollars) = -20000 + 4000 * years of education
+\$1.15 per euro
+annual income (in euros)  = $-20000/1.25=-16000$ + $4000/1.25=3200$ * years of education
+
+a) The y-intercept is -16000. For a person with zero years of education, they will have an annual income of -16000 euros. This does not make sense since a person cannot have negative income. "Income" by definition means money earned. They either have income (positive) or no income (zero); one cannot earn negative money. If spent money or money owed was being calculated (negative money), then the term would be "net income."
+
+b) The slope is 3200. Per one year of additional education, a person's annual income will increase by 3200 euros, on average. 
+
+c) The correlation between two variables is the same regardless of what the units may be for either variable because it standardizes everything by the SD variable. This means that whether the annual income is in euros or dollars, the standardization ensures that it represents the same measurement. Therefore, the correlation between annual income in euros and the number of years in education equals 0.05 (the correlation between anual income in dollars and number of years in education).

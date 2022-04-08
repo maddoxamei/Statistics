@@ -1,0 +1,226 @@
+---
+title: "Homework 5"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+rgl::setupKnitr(autoprint = TRUE)
+```
+
+<style type="text/css">
+    ol { list-style-type: upper-alpha; }
+</style>
+
+
+## Please submit the solution in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide all relevant code and output. Goal of this homework is to have you familiarized with 1) statistical inference for both simple and multiple linear regression (confidence intervals, t-test, F-test, prediction/confidence bands); 2) practice your R coding.
+
+
+# Problem #1
+
+```{r}
+df <- readr::read_csv(sprintf("https://docs.google.com/uc?id=%s&export=download", "1UJIu7Ku3rRWTnFJpK4uLQ2DXW8DjfgtT"))
+
+lm.obj <- lm(sales ~ radio, data = df)
+```
+
+1)  Interpret the hypothesis test results. Is there a statistically significant relationship between predictor and response? Why?
+```{r}
+summary( lm.obj )$coefficients
+```
+There is statistically significant linear relationship between the predictor and the response value because the p-value (`r summary( lm.obj )$coefficients[2,"Pr(>|t|)"]`$\approx0$) is less than most common significance levels ($\alpha=0.001,0.01,0.05$).
+
+
+2) Interpret the confidence intervals for both the intercept and the slope.
+```{r}
+confint(lm.obj)
+```
+$\beta_0:$We are 95% confident that for markets with $0 spent on radio advertisements, the sales will be between `r paste( as.integer(confint(lm.obj)[1,]*1000), collapse = ' and ')` items, on average
+
+$\beta_1:$We are 95% confident that for $1000 increase in radio advertisement, the sales will increase by between `r paste( as.integer(confint(lm.obj)[2,]*1000), collapse = ' and ')` items, on average
+
+
+3) For a 20, 000$ investment into radio ads, provide and interpret
+
+a. A single prediction
+```{r}
+pred <- predict( lm.obj, data.frame(radio=20) )
+pred
+```
+Markets with $20K spent on radio advertisement, the sales will be `r as.integer(pred*1000)` items, on average
+
+b. 95% confidence bands
+```{r}
+pred <- predict( lm.obj, data.frame(radio=20), interval = 'c' )
+pred
+```
+We are 95% confident that for markets with $20K spent on radio advertisement, sales will be between `r as.integer(pred[2]*1000)` and `r as.integer(pred[3]*1000)` items, on average. 
+
+c. 95% predictions bands.
+```{r}
+pred <- predict( lm.obj, data.frame(radio=20), interval = 'p' )
+pred
+```
+We are 95% confident that for any single market with $20K spent on radio advertisement, sales will be between `r as.integer(pred[2]*1000)` and `r as.integer(pred[3]*1000)` items. 
+
+
+_Which ones are wider - confidence or prediction? Why do you think that is?_\
+Prediction bands are wider because it captures where the individual response value is likely to land whereas the confidence band captures the _average_ response value.
+
+
+# Problem #2
+
+```{r}
+df <- readr::read_csv("https://img1.wsimg.com/blobby/go/bbca5dba-4947-4587-b40a-db346c01b1b3/downloads/fl_crime.csv?ver=1646872487681")
+```
+
+
+1) For simple linear regression $crime\sim education$,
+```{r}
+lm.obj <- lm(`crime rate (per 1000)` ~ `education (%)`, data = df)
+```
+
+a. Write down the **full modeling equation**, with all **error assumptions**\
+$crime = \beta_0+\beta_1education+\epsilon,~\epsilon\sim N(0, \sigma^2)$
+
+b. Fit the model, provide the **fitted equation**. Provide a plot of the fitted line.
+```{r}
+lm.obj$coefficients
+```
+$\hat{crime}=$ `r lm.obj$coefficients[1]`$+$ `r lm.obj$coefficients[2]`$education$
+```{r}
+plot(`crime rate (per 1000)` ~ `education (%)`, data = df)
+abline(lm.obj, col = 'red', lwd = 3)
+
+```
+
+c. Is there a statistically significant relationship? If yes, interpret the effect of education on crime.\
+$H_0:\beta_1=0$\
+$H_a:\beta_1\ne0$
+```{r}
+summary( lm.obj )$coefficients
+```
+There is statistically significant linear relationship between education (the predictor) and crime (the response value) because the p-value (`r summary( lm.obj )$coefficients[2,"Pr(>|t|)"]`$\approx0$) is less than all common significance levels ($\alpha=0.001,0.01,0.05$).
+
+2) For multiple linear regression $crime\sim education + urbanization$,
+```{r}
+lm.obj <- lm(`crime rate (per 1000)` ~ `education (%)` + `urbanization (%)`, data = df)
+```
+
+a. Write down the **full modeling equation**, with all **error assumptions**.\
+$crime = \beta_0+\beta_1education+\beta_2urbanization+\epsilon,~\epsilon\sim N(0, \sigma^2)$
+
+b. Fit the model, provide the **fitted equation**. Provide a plot of the **fitted plane**
+```{r}
+lm.obj$coefficients
+```
+$\hat{crime}=$ `r lm.obj$coefficients[1]`$+$ `r lm.obj$coefficients[2]`$education+$ `r lm.obj$coefficients[3]`$urbanization$
+```{r}
+rgl::plot3d(lm.obj)
+rgl::segments3d(rep(df$`education (%)`, each=2),
+           rep(df$`urbanization (%)`, each=2),
+           z=matrix(t(cbind(df$`crime rate (per 1000)`,predict(lm.obj))), nc=1),
+           add=T,
+           lwd=2,
+           col=2)
+```
+
+c. Provide interpretation of education effect on crime. Did it change compared to part 1? Why?
+```{r}
+summary( lm.obj )$coefficients
+```
+It is plausible that there is no linear relationship between education (a predictor) and crime (the response value) because the p-value (`r summary( lm.obj )$coefficients[2,"Pr(>|t|)"]`) is higher than most common significance levels ($\alpha=0.001,0.01,0.05$). 
+```{r}
+cor(df[,2:4])
+```
+Notice how the education effect on crime changed after including urbanization as one of our predictors. This is due to an issue of colliniarity - two (or more) predictors are strongly correlated and thus one acts as a proxy for another when influencing the response value. This effect is not captured in simple linear regression because it assumes all effect on the response value (crime) is due to a single predictor (education). In this case, education and urbanization are highly correlated with each other, with urbanization being more strongly correlated to crime than education. 
+
+d. Provide interpretation of the intercept. By the sound of it, does it make sense to interpret it here?
+Counties with 0% education and 0% urbanization, the crime rate will be `r lm.obj$coefficients[1]` per 1000 people, on average. Depending on the definition of education, a 0% value could be impossible or highly improbable, as basic education (e.g. counting, language learning, etc.) is reasonably still taught in the smallest/unstructured social communities (e.g. hunter-gatherer). In effect, it could be extrapolation.
+
+3) For multiple linear regression $crime\sim education + urbanization + income$
+```{r}
+lm.obj <- lm(`crime rate (per 1000)` ~ `education (%)` + `urbanization (%)` + `income (median, in 1000)`, data = df)
+```
+
+a. Write down the **full modeling equation**, with all **error assumptions**.\
+$crime = \beta_0+\beta_1education+\beta_2urbanization+\beta_3income+\epsilon,~\epsilon\sim N(0, \sigma^2)$
+
+b. Having fitted the model from part 3(a), provide the **fitted equation**.
+```{r}
+lm.obj$coefficients
+```
+$\hat{crime}=$ `r lm.obj$coefficients[1]`$+$ `r lm.obj$coefficients[2]`$education+$ `r lm.obj$coefficients[3]`$urbanization+$ `r lm.obj$coefficients[4]`$income$
+
+c. Write down the hypotheses (in terms of parameters of the model in part 3(a)) and make conclusions for t-tests on significance of each individual predictor.
+```{r}
+summary(lm.obj)$coefficients
+```
+_education_: $H_0:\beta_1=0$\ $H_a:\beta_1\ne0$\
+it is plausible that education has no linear relationship with crime, holding all other predictors constant\
+_urbanization_:  $H_0:\beta_2=0$\ $H_a:\beta_2\ne0$\
+urbanization has a linear relationship with crime\
+_income_:  $H_0:\beta_3=0$\ $H_a:\beta_3\ne0$\
+it is plausible that income has no linear relationship with crime, holding all other predictors constant
+
+d. Interpret the effect of the only statistically significant predictor from part 3(c).\
+Per 1% increase in urbanization, holding education and income constant, crime rate will increase by `r lm.obj$coefficients[3]` per 1000 people, on average
+
+e. Formulate the hypotheses (in terms of parameters of the model in part 3(a) for testing the overall model significance. Provide the conclusion of the respective test\
+$H_0:\beta_1=\beta_2=\beta_3=0$\
+$H_a:\{at~least~one~\beta_j\ne0\, j=1,2,3\}$
+```{r}
+fstat <- c(as.list(summary(lm.obj)$fstatistic), FALSE)
+names(fstat) <- c("q", "df1", "df2", "lower.tail")
+do.call(pf, fstat)
+```
+The linear model is statistically significant because the p-value (`r do.call(pf, fstat)`$\approx0$) is less than most significance levels ($\alpha=0.001,0.01,0.05$). Therefore, at least one predictor has a linear relationship with crime (the response variable).
+
+# Problem #3 (Why need F-statistic?)
+
+1. Generate a data example where you have a response variable Y and a predictor variable X that are unrelated to each other (make sure to use a random generation mechanism). How would you do that? How would you demonstrate that they’re unrelated (think of basic visualizations)?\
+To randomly generate unrelated variables, I'd randomly sample values from a range where each value has an equal probability of being selected (uniformly distributed). The scatterplot of the $y~X$ would have data points spread across the whole plot, more or less equally distributed across the X and Y value ranges. In other words, a plot with data points everywhere with no particular pattern or clumping to the location of the data points. See below for an example.
+```{r echo=FALSE}
+plot(runif(200, -50,50),runif(200, -80,80))
+```
+
+
+2. Having settled on a method of generating such unrelated variables in part 1, proceed to:
+
+a. Generate response variable vector Y (e.g. of length 200)
+b. Generate response variable vector Y (e.g. of length 200); **Record them**.
+```{r}
+set.seed(2)
+y <- runif(200, -50,50)
+X <- matrix(runif(200*50, -50,50), ncol=50)
+lm.obj <- lm(y ~ X)
+```
+
+3. Fit a multiple linear regression model, regressing response Y from part 2(a) on all 50 X’s you’ve generated in part 2(b).
+```{r}
+summary(lm.obj)
+```
+
+a. Report the # of individual t-tests that resulted into a significant p-value, hence rejecting H0 at $\alpha = 0.05$ level. Were those rejections correct decisions or not? Why? (Hint: Remember what’s
+the true relationship between X and Y , given how you generated the data.) If not, what type of error do they correspond to? Why?\
+There were `r sum(summary(lm.obj)$coefficients[,"Pr(>|t|)"] <= 0.05)` significant p-values at the $\alpha = 0.05$ level. These rejections were the incorrect decision because we DESIGNED X to be unrealated to Y. Therefore, they represent Type I Error because we reject the null hypothesis (no linear relationship) when the null hypothesis is true (variables are unrelated).
+
+b. Given that the individual significant t-test aren’t necessarily indicative of at least one predictor having a true relationship with the response, what would be the appropriate testing procedure to address that question? Conduct that test, report its p-value, interpret its result.\
+F-test would be an appropriate testing procedure to address whether at least one predictor has a true linear relationship with the response value.\
+$H_0:\beta_1=...=\beta_{50}=0$\
+$H_a:\{at~least~one~\beta_j\ne0,~ j=1,...,50\}$
+```{r}
+summary(lm.obj)$fstatistic
+```
+```{r}
+fstat <- c(as.list(summary(lm.obj)$fstatistic), FALSE)
+names(fstat) <- c("q", "df1", "df2", "lower.tail")
+do.call(pf, fstat)
+```
+The p-value (`r do.call(pf, fstat)`) is greater than the significance level ($\alpha=0.05$), therefore we fail to reject the null hypothesis. It is plausible that none of the predictors have a linear relationship with the response; plausible that the linear model is useless.
+

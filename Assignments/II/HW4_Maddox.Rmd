@@ -1,0 +1,116 @@
+---
+title: "Homework 4"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+<style type="text/css">
+    ol { list-style-type: upper-alpha; }
+</style>
+
+
+## Please submit the solution in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide all relevant code and output. Goal of this homework is to have you familiarized with 1) modeling assumptions of linear regression; 2) properties of least squares estimates; 3) confidence intervals; and 4) practice your R coding.
+
+
+# Problem #1
+
+Show that $Y_i=\beta_0+\epsilon_i,~\epsilon_i\sim_{ind}N(0, \sigma^2)$
+leads to $Y_i\sim_{ind}N(\beta_0, \sigma^2)$.
+
+More precisely, make sure to derive:
+
+  A.  Formula for $E[Y_i]$. Explain what it means in plain English
+  B.  Formula for $V[Y_i]$. In plain English, explain what $V[Y_i]$ describes
+  C.  Normality of $Y_i$.
+
+**No need to show independence ("ind")**
+\begin{center}
+$Y_i=\beta_0+\beta_1X_i+\epsilon_i$
+\end{center}
+We know that $\beta_0$ and $\beta_1$ are constants; $X$ is fixed, and therefore can be treated similarly to $\beta_0,~\beta_1$ in terms of mathematical properties. Therefore, $\beta_0+\beta_1X_i$ can be treated like a constant in all the following derivations. However, the given equation leads me to assume $\beta_1=0$ OR that $X_i=0$.
+
+  A.  $E[Y_i]=E[\beta_0+\beta_1X_i+\epsilon_i]$\
+  $E[\beta_0+\beta_1X_i]+E[\epsilon_i]\Longleftrightarrow E[constant]+E[\epsilon_i]$\
+  The expected value of a constant, is just the constant.\
+  The expected value of epsilon is 0 by the definition above.\
+  $\beta_1$ or $X_i$ is 0 by the assumption from above.\
+  $\beta_0+\beta_1X_i+0\Longrightarrow\beta_0+0+0$\
+  $E[Y_i]=\beta_0:$The expected value for any observation being drawn from the population is centered at the y-intercept value $\beta_0$.
+  
+  B.  $V[Y_i]=V[\beta_0+\beta_1X_i+\epsilon_i]$\
+  $V[constant+\epsilon_i]$\
+  constant only shifts center; doesn't affect variability\
+  $V[\epsilon_i]$\
+  The variance of epsilon is $\sigma^2$ by the definition above.\
+  $V[Y_i]=\sigma^2:$The variance for any observation being drawn from the population is $\sigma^2$.
+    
+  C.  Normality of $Y_i$.\
+  $\epsilon_i$ is normally distributed by the definition above.\
+  $\beta_0+\beta_1X_i$ simply shifts the $\epsilon_i$ distribution by the constant value.
+  
+# Problem #2
+
+Finish the lab, compiling it into a nice R markdown report.\
+_(see attached Least Squares Regression Lab .Rmd and .pdf files)_
+  
+# Problem #3
+
+Verify that, for simple linear regression $Y=\beta_0+\beta_1X+\epsilon$, we have
+\begin{center}
+$\frac{\hat{\beta_1}-\beta_1}{SE(\hat{\beta_1})}\sim t_{n-2}$
+\end{center}
+
+```{r}
+set.seed(1)
+
+n <- 5
+X <- runif(n, -50, 50)
+beta.0 <- 2
+beta.1 <- 3
+n.rep <- 1000
+
+ts.est <- sapply(1:n.rep, function(v){
+  Y <- beta.0 + beta.1*X + rnorm(n, 0, 10)
+  lm.obj <- lm(Y~X)
+  (lm.obj$coefficients["X"] - beta.1) / summary(lm.obj)$coefficients["X", 2]
+})
+```
+
+```{r echo=FALSE}
+hist(ts.est, freq = FALSE)
+curve( dt(x, n-2), from=-10, to=10, add = T )
+```
+
+TS distribution is centered at 0 (mean=`r mean(ts.est)`$\approx0$) and appears to approximately follow the respective t-distribution.
+
+# Problem #4
+
+Calculate the % of times (out of 1000 generated confidence intervals) that the true population values $\beta_0=2$ and $\beta_1=3$ ended up within their respective confidence intervals. Are those %’es equal to
+what we expected? Why? Hint: Recall the practical interpretation of a 90% confidence interval.
+
+```{r}
+set.seed(2)
+
+n <- 200
+X <- runif(n, -50, 50)
+n.rep <- 1000
+
+conf_int_b0 <- matrix(0, nrow=n.rep, ncol=2)
+conf_int_b1 <- matrix(0, nrow=n.rep, ncol=2)
+for (r in 1:n.rep){
+  Y <- beta.0 + beta.1*X + rnorm(n, 0, 10)
+  ci <- confint(lm(Y~X), level = 0.9)
+  conf_int_b0[r,] <- ci[1,]
+  conf_int_b1[r,] <- ci[2,]
+}
+```
+
+Because we are calculating $90\%$ confidence intervals, we would expect to see approximately $90\%$ coverage - $90\%$ of the confidence intervals contain the true population parameter. The $\beta_0$ coverage (`r mean(conf_int_b0[,1] < beta.0 & beta.0 < conf_int_b0[,2])`) and the $\beta_1$ coverage (`r mean(conf_int_b1[,1] < beta.1 & beta.1 < conf_int_b1[,2])`) are both close to $0.9$ which is what we would expect from a $90\%$ confidence level

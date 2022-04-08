@@ -1,0 +1,138 @@
+---
+title: "Least Squares Regression Lab"
+author: "Mei Maddox"
+date: "2/22/2022"
+output:
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# knitr::knit_hooks$set(time_it = local({
+#   now <- NULL
+#   function(before, options) {
+#     if (before) {
+#       # record the current time before each chunk
+#       now <<- Sys.time()
+#     } else {
+#       # calculate the time difference after a chunk
+#       res <- difftime(Sys.time(), now)
+#       # return a character string to show the time
+#       paste("Time for the chunk", options$label, "to run:", res)
+#     }
+#   }
+# }))
+knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_chunk$set(time_it = TRUE)
+library(dplyr)
+```
+
+## Setup
+
+This lab illustrates the theoretical properties of linear regression coefficients using the following regression equation:
+\begin{center}
+$y=2+3X+\epsilon,~\epsilon\sim N(0, \sigma^2)$,
+\end{center}
+where the fixated $X$-values are obtained from a uniform distribution from $-50$ to $50$
+```{r}
+# Establish population constants
+beta.0 <- 2
+beta.1 <- 3
+
+# Establish epsilon standard deviation
+sigma <- 40
+
+## Generate a 100 values for explanatory variable x, uniformly distributed from -50 to 50.
+set.seed(1)
+x <- runif(100, -50, 50)
+```
+
+### Single random sample
+
+Because X is fixated, randomness is introduced by $\epsilon$. 
+
+```{r}
+## Generate y values from the model
+y <- beta.0 + beta.1*x + rnorm(100, 0, sigma)
+
+## Fit least squares regression y ~ x, plot the resulting fit.
+plot.default(y~x)
+abline( lm(y~x) )
+```
+
+### Multiple random samples
+
+Conducting 1,000 simulations of the earlier sampling method illustrates how sampling variety can affect the least squares regression line. In the plot below, the red line represents the population regression line.
+
+```{r}
+plot.default(y~x)
+
+beta.est <- NULL
+for (i in 1:1000){
+  y <- beta.0 + beta.1*x + rnorm(100, 0, sigma)
+  lm.obj <- lm(y~x)
+  abline( lm.obj, col = 'lightblue' )
+  beta.est <- rbind( beta.est, lm.obj$coefficients )
+}
+
+## Overlay a thick red population regression line over.
+abline( beta.0, beta.1, col = 'red', lwd = 3 )
+```
+
+## Coeficient Calculations
+
+The collection of coefficients obtained from sampling from the population multiple times can be used to estimate the population coefficients.
+
+```{r}
+# Beta_1
+mean.1 <- mean(beta.est[,2])
+var.theo.1 <- sigma^2 / sum( (x-mean(x))^2 )
+var.1 <- var(beta.est[,2])
+
+
+# Beta_0
+mean.0 <- mean(beta.est[,1])
+var.theo.0 <- sigma^2 * (1/100 + mean(x)^2/sum( (x-mean(x))^2 ))
+var.0 <- var(beta.est[,1])
+```
+
+```{r echo=FALSE}
+data.frame(Equation = c("$\\beta_1$",
+                        "$\\beta_0$",
+                        "$\\frac{\\sigma^2}{\\sum_{i=1}^{n} (X_i-\\bar X)^2}$",
+                        "$\\sigma^2\\times(\\frac{1}{n}+\\frac{\\bar X^2}{\\sum_{i=1}^{n} (X_i-\\bar X)^2})$"),
+                 Value = c(beta.1, 
+                           beta.0,
+                           var.theo.1,
+                           var.theo.0 ),
+                 Practical=c(mean.1, 
+                             mean.0, 
+                             var.1,
+                             var.0),
+                 row.names = c("E[$\\hat{\\beta_1}$]",
+                               "E[$\\hat{\\beta_0}$]",
+                               "V[$\\hat{\\beta_1}$]",
+                               "V[$\\hat{\\beta_0}$]")) %>%
+  kableExtra::kbl(escape = F, booktabs = T, align = rep('c', 3), caption = "y = 2 + 3X + $\\epsilon$") %>%
+  kableExtra::add_header_above(c(" ", "Theoretical"=2, " ")) %>%
+  kableExtra::pack_rows("Expected Value (Mean)", 1, 2) %>%
+  kableExtra::pack_rows("Variance", 3, 4)
+```
+
+Both coefficients are normally distributed and centered about the respective population parameter ($\hat{\beta_j}\sim N(\beta_j,~V[\hat{\beta_j}]),~j=0,1$). The following two histograms illustrate this property.
+
+```{r}
+par(mfrow=c(1,2))
+
+hist( beta.est[,2], freq = F )
+curve( dnorm(x, beta.1, sqrt(var.theo.1)), from=2.4, to=3.6, add = T )
+
+hist( beta.est[,1], freq = F )
+curve( dnorm(x, beta.0, sqrt(var.theo.0)), from=-15, to=15, add = T )
+```
+
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+```
+

@@ -1,0 +1,130 @@
+---
+title: "Homework #7, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+## Problem 1
+
+**5.48** 
+Consider your birthday is Jan 1st. Suppose the number of students in the class is 25.
+
+a) The probability of finding at least one student with a birthday that matches yours is less than the probability of a match for at least any two students in the class (`r 1-prod(((365-24):364)/365)`) because you are specifying the date which must be matched.
+
+b) The probability of finding at least one student with a birthday that matches yours in a class size of 25 is $1-(\frac{364}{365})^{24}\approx$ `r 1 - (364/365)^24`.
+
+**5.50**
+```{r echo=FALSE}
+x <- matrix(c(.0005,.0015,.0005,.0025), ncol = 1, dimnames = list(c(4,6,12,16), c("P(hole in one)")))
+x
+```
+
+a) Because the probability is independent from one hole to the next, the probability of entire round is simply the product of all the probabilities for each hole. The listed probabilities is the complement of the probability of NO hole in one. Therefore, the probability is $1-P(4)\times 1-P(6) \times 1-P(12) \times 1-P(16)\approx$ `r prod(1-x)`
+
+b) Because the probability is indepenent from game to game, the probability of no holes in one across 20 games is simply the product of the probability of no holes in one for one round 20 times. $P(\{NoHoleInOne|20Rounds\})=P(\{NoHoleInOne|SingleRound\})^{20} \approx$ `r prod(1-x)^20`.
+
+c) The probability of making at least one hole in one across 20 rounds is the complement to the answer of part b. $P(\{AtLeastOneHoleInOne|20Rounds\})=1-P(\{NoHoleInOne|20Rounds\})\approx$ `r 1-prod(1-x)^20`.
+
+**5.57**
+Prevelence of breast cancer in women who get mammograms: $P(S) = 0.01$\
+Sensitivity: $P(POS|S)=0.86$\
+Specificity: $P(NEG|S^c)=0.88$
+```{r include=FALSE}
+x <- apply(matrix(c(.01,.01,.99,.99,.86,.14,.12,.88), ncol = 2, dimnames = list(c("TP","FN","FP","TN"))), 1, prod)
+```
+
+a) The prevalence of no breast cancer is $P(S^c)=1-P(S)=1-0.01=0.99$
+  - $P(S\cap POS)=P(POS|S)\times P(S)=0.86\times 0.01\approx$ `r x["TP"]`
+  - $P(S\cap NEG)=P(NEG|S)\times P(S)=(1-P(POS|S))\times P(S)=0.14\times 0.01\approx$ `r x["FN"]`
+  - $P(S^c\cap POS)=P(POS|S^c)\times P(S^c)=(1-P(NEG|S^c))\times P(S^c)=0.12\times 0.99\approx$ `r x["FP"]`
+  - $P(S^c\cap NEG)=P(NEG|S^c)\times P(S^c)=0.88\times 0.99\approx$ `r x["TN"]`
+  
+b) $P(POS)=P(POS\cap S)+P(POS\cap S^c)\approx$ `r x["TP"]+x["FP"]`
+
+c) The proportion of women who receive a positive mammogram and actually have breast cancer is $P(S|POS)=\frac{P(S\cap POS)}{P(POS)}\approx$ `r x["TP"]/(x["TP"]+x["FP"])`.
+
+d) You get the frequencies by multiplying the probability by the number of people. Although $P(S|POS)\approx$ `r x["TP"]/(x["TP"]+x["FP"])`, the sample size of 100 women would suggest that $P(S|POS)=\frac{1}{13}\approx$ `r 1/13` $\approx0.08$.
+
+**5.62** 
+```{r echo=FALSE}
+x <- matrix(c(48,1307,6,3921), nrow = 2, dimnames = list(c("Yes", "No"), c("POS","NEG")))
+x
+```
+
+a) $P(Yes)=54/5282\approx$ `r 54/5282`
+
+b)
+  - i: Sensitivity $=P(POS|Yes)=\frac{P(POS\cap Yes)}{P(Yes)}=\frac{48}{54}\approx$ `r 48/54`
+  - ii: Specificity $=P(NEG|No)=\frac{P(NEG\cap No)}{P(No)}=\frac{3921}{5228}\approx$ `r 3921/5228`
+
+c)
+  - i: $P(Yes|POS)=\frac{P(Yes\cap POS)}{P(POS)}=\frac{48}{1355}\approx$ `r 48/1355`
+  - ii:$P(No|NEG)=\frac{P(No\cap NEG)}{P(NEG)}=\frac{3921}{3927}\approx$ `r 3921/3927`
+
+d)
+  - $P(POS|Yes)$: Proportion of children who receive a positive diagnosis of down syndrome out of all sampled children who _ACTUALLY_ have it.
+  - $P(NEG|No)$: Proportion of children who receive a negative diagnosis of down syndrome out of all sampled children who do _NOT_ have it.
+  - $P(Yes|POS)$: Proportion of children who _ACTUALLY_ have down syndrome out of all sampled children which receive a positive diagnosis.
+  - $P(No|NEG)$: Proportion of children who do _NOT_ have down syndrome out of all sampled children which receive a negative diagnosis.
+  
+**6.5**
+```{r echo=FALSE}
+x <- data.frame(grade = c("A","B","C","D"), points = 4:1, P = c(.2,.4,.3,.1))
+x
+```
+
+a) The probability distribution is for the grade point score of a randomly selected student is $\{P(X=4)=0.2,P(X=3)=0.4,P(X=2)=0.3,P(X=1)=0.1\}$
+
+b) A student of this particular instructor receives $\mu=\sum_{i=1}^{4}x_iP(X=x_i)=4\times 0.2+3\times 0.4+2\times 0.3+1\times 0.1\approx$ `r sum(apply(x[-1], 1, prod))` points on an assignment, on average.
+
+**6.12** 
+You bid \$30 for first item and \$20 for second item on eBay. The probability of winning the bid is 0.1 and 0.2, respectively. The two bids are independent events. Let X denote the random variable representing the total amount of money you will spend on the two items.
+
+a) The sample space of winning or loosing the two bids is {WW,WL,LW,LL}.
+
+b) 
+  - $P(WW)=0.1\times 0.2=0.02$
+  - $P(WL)=0.1\times 0.8=0.08$ 
+  - $P(LW)=0.9\times 0.2=0.18$
+  - $P(LL)=0.9\times 0.8=0.72$ 
+
+c) ${P(X=50)=0.02, P(X=30)=0.08, P(X=20)=0.18, P(X=0)=0.72}$
+
+d) $\mu=50\times 0.02+30\times 0.08+20\times 0.18+0\times 0.72=1+2.4+3.6+0=7$
+
+## Problem 2
+
+**1**
+Using formula $E[X]=\sum_{i=1}^{k}x_i\times P(X=x_i)$, derive the form of E[aX + b] as a function of a, b
+and E[X].
+
+
+$E[aX+b]$\
+$=\sum_{i=1}^{k}(aX+b)_i\times P((aX+b)_i)$\
+$=\sum_{i=1}^{k}(ax_i+b)\times P(ax_i+b)$\
+$=\sum_{i=1}^{k}ax_i\times P(X=x_i)+b\times P(ax_i+b)$\
+$=\sum_{i=1}^{k}ax_i\times P(X=x_i)+\sum_{i=1}^{k}b\times P(ax_i+b)$\
+$=a\sum_{i=1}^{k}x_i\times P(X=x_i)+b\sum_{i=1}^{k}P(ax_i+b)$\
+$=a\times E[X]+b\times 1$\
+$=aE[X]+b$
+
+**2**
+Using formula $V[X]=E[(X-E[X])^2]=E[X^2]-(E[X])^2=\sum_{i}(x_i-E[X])^2\times P(X=x_i)$ and result from part 1, derive the form of V [aX +b]
+as a function of a, b and V [X].
+
+$V[aX+b]$\
+$=E[(aX+b)^2]-(E[(aX+b)])^2$\
+$=E[(aX+b)^2]-(E[(aX+b)])^2$\
+$=E[a^2X^2+2abX+b^2]-(aE[X]+b)(aE[X]+b)$\
+$=E[a^2X^2]+E[2abX]+b^2-(a^2(E[X])^2+2abE[X]+b^2)$\
+$=a^2E[X^2]+2abE[X]+b^2-a^2(E[X])^2-2abE[X]-b^2$\
+$=a^2E[X^2]-a^2(E[X])^2$\
+$=a^2(E[X^2]-(E[X])^2)$\
+$=a^2\times V[X]$

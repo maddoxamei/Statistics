@@ -1,0 +1,13 @@
+# Appendix
+
+## Dataset Documentation
+### ISLR::Credit
+```{r echo=FALSE, results='asis'}
+help_console("Credit", "html", lines = -1, before = "<blockquote>", after = "</blockquote>")
+```
+
+### ISLR::Wage
+```{r echo=FALSE, results='asis'}
+help_console("Wage", "html", lines = -1, before = "<blockquote>", after = "</blockquote>")
+```
+

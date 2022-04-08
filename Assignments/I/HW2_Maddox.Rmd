@@ -1,0 +1,294 @@
+---
+title: "Homework #2, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+## Problem 1 (make sure to include code with outputs)
+
+```{r}
+id <- "1IACzOQWcpvKqf3YnGye0qQOF2mtd42nK"
+fl_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+1. I will study the college gpa variable, which is a continuous variable on an interval from 0.0 to 4.0 inclusive (though the min for this sample is 2.6):
+
+```{r, fig.height=3.5}
+mean(fl_data$college_GPA)
+median(fl_data$college_GPA)
+```
+The average of all college GPA's (mean) is 3.453333. The median is 3.5. Although both the mean and median is important for descriptions of center, especially as skew can be determined with both values, the mean encompasses all observations thereby providing more theoretical applications. The main downside of mean is that it is sensitive to outliers. This variable, however, does not appear to have any (another reason the mean is better suited).
+
+2. 
+
+```{r, fig.height=3.5}
+sd(fl_data$college_GPA)
+diff(range(fl_data$college_GPA))
+```
+The difference between the maximum and minimum number college GPA values (range) is 1.4. The standard deviation is 0.351494. Both the standard deviation and the range are sensitive to outliers, especially the range as it only uses the extreme values. An advantage of the standard deviation is that it takes into account all observations thereby having more theoretical practicality. 
+
+3.
+
+```{r, fig.height=3.5}
+id <- "1IACzOQWcpvKqf3YnGye0qQOF2mtd42nK"
+fl_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+boxplot(fl_data$college_GPA)
+```
+There are no outliers for the college_GPA variable. The main variability measure used for the box plot are quartiles. These are used to calculate the interquartile range (IQR) which determines the non-outlier minimum, non-outlier maximum, and any potential outliers. An advantage of the IQR is that it is more resistant to outliers comparted to standard deviation.
+
+**2.21**  
+
+a) Skewed to the right, because of a few expensive upscale houses.
+
+b) Skewed to the right, because of a few faculty tending to overdraw frequently.
+
+c) Symmetric, due to most being around average, with several over- and underachievers.
+
+d) Symmetric, just like with most physical characteristics: most are around average, with several really short and really tall girls.
+
+**2.34** 
+The mean can be highly influenced by outliers. In this example, a smaller group of individuals who are paid vastly more in comparison to the majority of workers will pull the average salary up towards themselves. On the other hand, the median is more resistant to these outliers. In this example, the median salary would be closer (more representative) of the actual salary for the majority of the workers (most of the density of the data range). Management would therefore use the mean (as it is larger than the median) to argue a raise is not needed. The workers would use the median (as it is smaller than the mean) to argue for a raise.
+
+
+**2.37**
+a) 
+```{r}
+miles <- c(0,0,4,0,0,0,10,0,6,0)
+mean(miles)
+sort(miles)
+```
+$$Mean = (0+0+4+0+0+0+10+0+6+0)/10 = 2$$
+$$ Median = \{5th + 6th \ element\}/2 = (0+0)/2=0$$
+$$ Mode = \{Most \ frequent \ value\} = 0$$
+Interpretations:
+
+  - *Mean*: On a typical day, company employees average 2 miles of travel using public transportation.
+  - *Median*: On a typical day, median # of miles traveled by employees via public transportation is $(0+0)/2 = 0$ (average of 5th and 6th employees).
+  - *Mode*: Most of the employees travel 0 miles using public transportation on a typical day.
+
+b) New employee, travels 90 miles a day on public transport
+```{r}
+miles <- c(miles, 90)
+mean(miles)
+sort(miles)
+```
+$$Mean = (0+0+4+0+0+0+10+0+6+0+90)/11 = 10$$
+$$ Median = \{6th \ element\} =0$$
+$$ Mode = \{Most \ frequent \ value\} = 0$$
+Interpretations:
+
+  - *Mean*: On a typical day, company employees average 10 miles of travel using public transportation. The addition of the new employee pulled the mean closer to the outlier (higher). In other words the mean was influenced by the outlier.
+  - *Median*: On a typical day, median # of miles traveled by employees via public transportation is $(0+0)/2 = 0$ (average of 5th and 6th employees). The addition of the new employee did not affect the median (median was resistant to the outlier).
+  - *Mode*: Most of the employees travel 0 miles using public transportation on a typical day. The addition of the new employee did not affect the mode (median was resistant to the mode).
+
+**2.46**
+a) 
+```{r}
+days <- c(0,0,4,0,0,0,6,0)
+# Range
+max(days) - min(days)
+```
+$$Range = \{largest \ value - \ smallest \ value\} = (6-0) = 6$$
+Interpretation:
+
+  - *Range*: In the past year, the difference between the maximum and minimum number of sick days taken by company employees was 6 days.
+  
+b)
+```{r}
+# Mean
+mean(days)
+# Standard Deviation
+(days - mean(days)) # Contents of summation before square
+sum((days - mean(days))^2) # Numerator
+sum((days - mean(days))^2)/(length(days) - 1) # Value of fraction
+sqrt( sum((days - mean(days))^2)/(length(days) - 1) ) # Final Value
+# Value-Check
+sd(days)
+# Central Intervals
+c(mean(days)-sd(days), mean(days)+sd(days)) # containing 68%
+c(mean(days)-2*sd(days), mean(days)+2*sd(days)) # containing 95%
+```
+$$ Standard\ Deviation = \sqrt{\frac{\sum \{each \ value - mean \ of \ all \ values \}^2}{total \ number \ of \ elements -1}}= \sqrt{\frac{\sum \{each \ value - 1.25 \}^2}{8 -1}} \\ =\sqrt{\frac{(-1.25^2+-1.25^2+ 2.75^2+ -1.25^2+ -1.25^2+ -1.25^2+  4.75^2+ -1.25^2)}{7}} \\ =\sqrt{\frac{39.5}{7}}=\sqrt{5.642857}=2.37547$$
+Interpretation:
+
+  - *Standard Deviation*: In the past year, approx. 68% of employees took 0 to 3.62547 days of sick leave.
+  
+c)
+```{r}
+days <- c(0,0,4,0,0,0,60,0)
+# Range
+max(days) - min(days)
+# Mean
+mean(days)
+# Standard Deviation
+(days - mean(days)) # Contents of summation before square
+sum((days - mean(days))^2) # Numerator
+sum((days - mean(days))^2)/(length(days) - 1) # Value of fraction
+sqrt( sum((days - mean(days))^2)/(length(days) - 1) ) # Final Value
+# Value-Check
+sd(days)
+# Central Intervals
+c(mean(days)-sd(days), mean(days)+sd(days)) # containing 68%
+c(mean(days)-2*sd(days), mean(days)+2*sd(days)) # containing 95%
+```
+$$Range = \{largest \ value - \ smallest \ value\} = (60-0) = 60$$
+$$ Standard\ Deviation = \sqrt{\frac{\sum \{each \ value - mean \ of \ all \ values \}^2}{total \ number \ of \ elements -1}}= \sqrt{\frac{\sum \{each \ value - 8 \}^2}{8 -1}} \\ =\sqrt{\frac{(-8^2+ -8^2+ -4^2+ -8^2+ -8^2+ -8^2+ 52^2+ -8^2)}{7}} \\ =\sqrt{\frac{3104}{7}}=\sqrt{443.4286}=21.05774$$
+Interpretation:
+
+  - *Range*: In the past year, the difference between the maximum and minimum number of sick days taken by company employees was 60 days. The correction of the data enlarged the maximum value, thereby increasing the range (range was highly impacted by the outlier).
+  - *Standard Deviation*: In the past year, approx. 68% of employees took 0 to 29.05774 days of sick leave. Approx. 95% of employees took 0 to 50.11549 days of sick leave. The correction of the data greatly enlarged the standard deviation value (SD highly impacted by outliers).
+  
+**2.54**
+
+a) 95% of the female weights lie between 99 and 167 pounds
+$$Interval = [mean-2*std, mean+2*std]=[133-2*17, 133+2*17] = [99, 167]$$
+b) The athlete who weighs 185 pounds lies outside 3 standard deviations above the mean. This is unusual as according to the empirical rule of standard deviation, all or nearly all of the weights should be at or below 184 pounds.
+$$Upper \ Bound = mean+3*std=133+3*17 = 133+51 = 184$$
+
+**2.62**
+```{r}
+days <- sort(c(Italy=42, France=37, Germany=35, Brazil=34, Britain=28, Canada=26, Japan=25, US=13))
+days
+median(days)
+median(days[1:(length(days)/2)])
+median(days[((length(days)/2)+1):length(days)])
+```
+a) The median number of average vacation days taken by residents of the eight countries is 31.
+$$Median = \{4th + 5th \ element\}/2 = (28+34)/2=31$$
+b) The median number of average vacation days taken by residents of the eight countries in the first quartile is 25.5.
+$$Median = \{2nd + 3rd \ element\}/2 = (25+26)/2=25.5$$
+c) The median number of average vacation days taken by residents of the eight countries in the third quartile is 36.
+$$Median = \{6th + 7th \ element\}/2 = (35+37)/2=36$$
+d) 
+Interpretations:
+
+  - *a*: For all countries in the data, 50% of the residents take less than 31 vacation days on average in a typical year.
+  - *b*: For all countries in the data, 25% of the residents take less than 25.5 vacation days on average in a typical year.
+  - *c*: For all countries in the data, 75% of the residents take less than 36 vacation days on average in a typical year.
+  
+  
+  
+**2.66**
+
+a) The standard deviation is usually preferred over the range because it has more theoretical practicality. 
+
+b) The IQR is sometimes preferred to the standard deviation because it is more resistant to outliers.
+
+c) An advantage of standard deviation over the IQR is that it takes all observations into account whereas the IQR only cares about observations at 25% and 75% cut-off points.
+
+**2.76**
+Range: 4.9 to 27.3
+Q1 = 7.15
+median = 10.15
+Q3 = 13.05
+mean = 11.1
+std = 5.6
+$$IQR = Q3 - Q1 = 13.05-7.15=5.9$$
+$$Outlier \ Boundaries= \{Q1-1.5*IQR,\ Q3+1.5*IQR \} = \{7.15-8.85,\ 13.05+8.85 \}=\{-1.7,\ 21.9\}$$
+
+a) In a box plot, the outer edges of the box (leftmost and rightmost) correspond to the Q1 and Q3 values, respectively. In this case they are 7.15 and 13.05. The whiskers (leftmost and rightmost) correspond to the minimum non-outlier value and maximum non-outlier value. In this case, 4.9 and 17.2.
+
+b) A value is an outlier if it is smaller than $Q1-1.5*IQR$ or larger than $Q3+1.5*IQR$. Greece (27.3) and Spain (26.4) would show up as outliers because both values are larger than $Q3+1.5*IQR= 13.05+8.85 = 21.9$
+
+c) According to the 3 standard deviation criterion, Greece (27.3) would not be an outlier because it's value is smaller than $mean+3*std=11.1+16.8=27.9$
+
+d) A country would only have a 0 z-score if it's unemployment rate is equal to the average unemplyment rate of all the surveyed countries. In this case, an unemployment rate of 11.1.
+
+## Problem 3
+```{r}
+ id <- "1au2tYZUtxb1AHckSTkdTthQB5OIKWJR8"
+listings_data <- read.csv(sprintf("https://docs.google.com/uc?id=%s&export=download", id))
+```
+
+1. Mean across burrows
+```{r}
+for( burrow in unique(listings_data$neighbourhood_group)){
+  print( paste(burrow, mean(subset(listings_data, listings_data$neighbourhood_group == burrow, select="price")$price)))
+}
+
+aggregate(price ~ neighbourhood_group, listings_data, mean)
+```
+
+2.
+```{r}
+for( burrow in unique(listings_data$neighbourhood_group)){
+  print( paste(burrow, median(subset(listings_data, listings_data$neighbourhood_group == burrow, select="price")$price)))
+}
+
+aggregate(price ~ neighbourhood_group, listings_data, median)
+```
+
+3.
+```{r}
+my.median <- function(x){
+  if( !is.numeric(x) | !is.vector(x) ) stop("Numeric vector data must be provided")
+  
+  temp <- sort(x)
+  halfway.point <- ceiling(length(temp)/2)
+  
+  if( length(temp) %% 2 == 0)
+    return( (temp[halfway.point]+temp[halfway.point+1])/2 )
+  else return(temp[ceiling(halfway.point)])
+}
+
+# Sanity check
+aggregate(price ~ neighbourhood_group, listings_data, my.median)
+aggregate(price ~ neighbourhood_group, listings_data, median)
+```
+
+
+## Problem 4
+
+**3.3**
+
+a) If the goal was to see if family income affects (is a predictor for) an indvividuals' happiness, the family income would be the explanatory variable and the happiness would be the response variable. If the goal was to see if an individuals' happiness can be used to predict their familys' income, the happiness would be the explanatory variable and the family income would be the response variable.
+
+b) 
+```{r}
+temp <- prop.table(matrix(c(21,96,143,213,506,347,126,248,114), ncol=3,dimnames=list(paste(c("Above","","Below"),"Average"),paste(c("Not","Pretty","Very"), "Happy"))), margin = 1)
+temp
+temp[3,1]-(temp[1,1]+temp[2,1])
+```
+The majority of individuals feel "Pretty Happy" regardless of their family income. A greater  proportion of individuals with below average family income (~0.24) are not happy compared to their average or above average combined counterparts (~$0.11+0.06=0.17$). A higher proportion of individuals who are very happy have above average family incomes (~.35) compared to those with average (~0.29) or below average (~0.19) family income.
+
+c) Overall, only 26.90% of surveyed people reported being very happy
+$$Proportion = \{total \ happy \ individuals/total \ individuals \ surveyed \}=488/1814=0.2690187$$
+
+**3.61**
+
+Rule of thumb: which proceeds the other (is established first) is normally the explanatory var
+
+a) Explanatory Variable: Square Footage
+   Response Variable: Assessed value of the house
+   How does the square footage of a house affect its assessed value?
+   Opposite (flip explanatory and response variables): How much of houses value is dependent on it's square footage (since house value is determined by several factors)
+
+b) Explanatory Variable: Gender
+   Response Variable: Political Party Preference
+   Do woman favor a particular political party over their male counterparts?
+
+c) Explanatory Variable: Number of years of education
+   Response Variable: Annual Income
+   Do those who study more, have a higher annual income?
+
+d) Explanatory Variable: Type of diet
+   Response Variable: Number of pounds lost
+   Which diets are more effective for weight loss?
+   
+
+**3.63**
+
+
+```{r}
+temp <- prop.table(matrix(c(621,834,187,145), ncol=2,dimnames=list(c("Male","Female"),c("Yes","No"))), margin = 1)
+temp
+temp[2,1]-temp[1,1]
+```       
+Although the vast majority of males (~77%) and females (~85%) believe in life after death, a greater proportion (~0.08) of females believe in life after death compared to their male counterparts. In other words, females believe in life after death approx. 8 percentage points higher than males.

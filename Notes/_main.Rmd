@@ -1,0 +1,137 @@
+---
+title: "Comprehensive Statistics Notes"
+author: "Mei Maddox"
+date: "Last Compiled on `r format(Sys.Date(), format='%b %d %Y')`"
+description: |
+  This is a minimal example of using the bookdown package to write a book.
+  set in the _output.yml file.
+  The HTML output format for this example is bookdown::gitbook,
+output:
+  bookdown::pdf_book: default
+  bookdown::gitbook: default
+  bookdown::epub_book: default
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [packages.bib]
+biblio-style: apalike
+nocite: '@*'
+link-citations: yes
+github-repo: maddoxamei/Statistics
+---
+
+
+
+<!--chapter:end:index.Rmd-->
+
+# Multiple Linear Regression: Extensions
+
+<b style = "color:blue">Advantages</b> of classic linear regression models:
+
+  - in many cases they <b style = "color:blue">work quite well</b> from <b style = "color:blue">prediction</b> standpoint,
+  - they provide <b style = "color:blue">interpretable results</b>
+  
+On the other hand, they make some <b style = "color:red">restrictive assumptions</b>:
+
+  - <b style = "color:red">Additivity</b>: The effect of changes in X on the response Y is constant, independent of what values the other predictors are held at; "Per 1-unit increase in X, <b style = "color:red">holding other predictors constant</b>, the average Y will change by <b style = "color:red">$\beta$ (constant)</b>"\
+
+  - <b style = "color:red">Linearity</b>: Y constitutes a linear function of $X_1,X_2,...,X_p$\
+  $Y\approx f(X_1,X_2,...,X_p)=\beta_0+\beta_1X_1+\beta_2X_2+\dots+\beta_pX_p$
+
+## Interaction Effect: Removing the Additivity Assumption
+Example: Predict the $Y = \{\#~of~units\}$ produced at a factory, based on
+
+  - $X_1=\{\#~of~production~lines\}$
+  - $X_2=\{\#~of~workers\}$
+If <b style = "color:red">no workers</b> are available to operate the lines, increasing the # of lines will If <b style = "color:red">not be as effective</b> in increasing factory's production $\Longrightarrow$ there's an If <b style = "color:blue">interaction effect</b> between $X_1(\#~lines)$ and $X_1(\#~workers)$ in explaining $Y(\#~units~produced)$.
+
+For 
+
+[ISLR::Credit][ISLR::Credit] dataset
+
+### Numerical Variables
+$Balance = \beta_0+\beta_1Income+\beta_2Age+\beta_3Income\times Age$\
+$Balance = \beta_0+(\beta_1+\beta_3Age)Income+\beta_2Age+\epsilon$\
+$Balance = \beta_0+\tilde{\beta_1}Income+\beta_2Age+\epsilon$\
+
+$\beta_3=${change in effect of Income ads per 1-unit increase in Age ads (or vice-versa)}
+
+
+
+### Numerical and Categorical
+
+
+
+
+
+
+
+$\color{red}{red~text}$
+$\color{red}{\text{red text}}$
+
+
+hence more workers, more effectivenes of lines lines or production
+
+slide 7:
+$H_0:\beta_3=0$\
+$H_a:\beta_3\ne0$
+
+slide 8: predictions on models with interaction
+1) $\hat{sales}=6.75+0.019TV+0.029radio+0.001(TV\times radio)$
+```{r eval=FALSE}
+lm.obj <- lm(sales ~ TV + radio + TV:radio, data = Advertising)
+lm.obj <- lm(sales ~ TV*radio, data = Advertising)
+```
+
+2) Interpret effect that 1000$ increase in TV budget has on sales
+
+Per \$1000 increase in TV, holding radio constant, sales will increase by ($0.019+0.001\times radio$)$\times1000$ items, on average
+
+3) Interpret effect that 1000$ increase in radio budget has on sales
+
+Per \$1000 increase in radio, sales will increase by ($0.029+0.001\times TV$)$\times1000$ items, on average
+
+slide 9:
+
+1) Interpret the interaction coefficient $\hat{\beta_3}=0.0011$
+Per \$1000 increase in TV ads, the effectiveness of radio ads will increase by $0.0011\times1000=1$ unit, on average
+
+what is effectiveness?
+
+2) Interpret coefficients $\hat{\beta_1}=0.0191$ and $\hat{\beta_2}=0.029$
+
+For each \$1000 increase in TV ads, holding radio at \$0, sales will increase by 19 units, on average
+
+slide 11:
+$balance_i=\beta_0+$
+
+limitations:
+  - doesn't allow for different slopes between quantatitive predictor and response
+  
+same slope beta1hat means that the effect income has on credit balance does not depend on student status
+
+limitation is addressed by adding interaction term $income\times D_{stud}$
+
+$balance_i=\beta_0+\beta_1income_i+\beta_2D_{stud}+\beta_3(income_i\times D_{stud})+\epsilon_i,~\epsilon_i\sim_{ind}N(0,\sigma^2)$
+
+$balance_i=\left\{ \begin{array}{cl}\beta_0+\beta_1income_i+\beta_2+\beta_3income_i+\epsilon_i \\ \beta_0+\beta_1income_i+\epsilon_i \end{array} \right.$
+
+$balance_i=\left\{ \begin{array}{cl}(\beta_0+\beta_2)+(\beta_1+\beta_3)income_i+\epsilon_i,&i^{th}~person~(student) \\ \beta_0+\beta_1income_i+\epsilon_i,&i^{th}~person~(not~student) \end{array} \right.$
+
+$H_0:\beta_3=0$
+$H_a:\beta_3\ne0$
+significant or no significant interaction???
+
+<!--chapter:end:01-test.Rmd-->
+
+# Appendix
+
+## Dataset Documentation
+### ISLR::Credit
+```{r echo=FALSE, results='asis'}
+help_console("Credit", "html", lines = -1, before = "<blockquote>", after = "</blockquote>")
+```
+
+
+
+<!--chapter:end:99-appendix.Rmd-->
+

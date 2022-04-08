@@ -1,0 +1,220 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+# Multiple Linear Regression: Extensions
+
+<b style = "color:blue">Advantages</b> of classic linear regression models:
+
+  - in many cases they <b style = "color:blue">work quite well</b> from <b style = "color:blue">prediction</b> standpoint,
+  - they provide <b style = "color:blue">interpretable results</b>
+  
+On the other hand, they make some <b style = "color:red">restrictive assumptions</b>:
+
+  - <b style = "color:red">Additivity</b>: The effect of changes in X on the response Y is constant, independent of what values the other predictors are held at; "Per 1-unit increase in X, <b style = "color:red">holding other predictors constant</b>, the average Y will change by <b style = "color:red">$\beta$ (constant)</b>"\
+
+  - <b style = "color:red">Linearity</b>: Y constitutes a linear function of $X_1,X_2,...,X_p$\
+  $Y\approx f(X_1,X_2,...,X_p)=\beta_0+\beta_1X_1+\beta_2X_2+\dots+\beta_pX_p$
+
+## Interaction Effect: Removing the Additivity Assumption
+Example: Predict the $Y = \{\#~of~units\}$ produced at a factory, based on
+
+  - $X_1=\{\#~of~production~lines\}$
+  - $X_2=\{\#~of~workers\}$
+If <b style = "color:red">no workers</b> are available to operate the lines, increasing the # of lines will If <b style = "color:red">not be as effective</b> in increasing factory's production $\Longrightarrow$ there's an If <b style = "color:blue">interaction effect</b> between $X_1(\#~lines)$ and $X_1(\#~workers)$ in explaining $Y(\#~units~produced)$.
+
+Hence more workers, more effectivenes of lines lines or production
+
+
+slide 25
+Association uses 2 variables, interaction 
+
+
+
+
+
+
+### Numerical Variables
+
+_The [ISLR::Credit][ISLR::Credit] dataset is used to illustrate this concept._
+
+$Balance_i = \beta_0+\beta_1Income_i+\beta_2Rating_i+\beta_3Income_i\times Rating_i+\epsilon_i,~\epsilon_i\sim_{ind}N(0,\sigma^2)$\
+$Balance_i = \beta_0+(\beta_1+\beta_3Rating_i)Income_i+\beta_2Rating_i+\epsilon_i,~\epsilon_i\sim_{ind}N(0,\sigma^2)$\
+$Balance_i = \beta_0+\tilde{\beta_1}Income_i+\beta_2Rating_i+\epsilon_i,~\epsilon_i\sim_{ind}N(0,\sigma^2)$\
+
+$\beta_3=${change in effect of Income per 1-unit increase in Rating (or vice-versa)}
+
+```{r}
+lm.obj <- lm(Balance ~ Income + Rating + Income:Rating, data = ISLR::Credit)
+lm.obj <- lm(Balance ~ Income*Rating, data = ISLR::Credit)
+```
+
+```{r echo=FALSE}
+knitr::kable(summary(lm.obj)$coefficients, booktabs = T, digits = 4, caption = "Coeficient Summary")
+```
+
+$\hat{Balance} =$ `r round(lm.obj$coefficients[1], 4)` $+$ `r round(lm.obj$coefficients[2], 4)` $Income+$ `r round(lm.obj$coefficients[3], 4)` $Rating+$ `r round(lm.obj$coefficients[4], 4)` $(Income\times Rating)$ 
+
+**Is there a significant interaction between Income and Rating?**\
+$H_0:\beta_3=0$\
+$H_a:\beta_3\ne0$\
+There is a significant interaction between Income and Rating because the p-value (`r summary(lm.obj)$coefficients["Income:Rating","Pr(>|t|)"]`) < $\alpha=0.05$.
+
+Another method is via incremental F-test where the null model excludes the interaction terms, thus only including the main effects
+```{r echo=FALSE}
+anova(lm(Balance~Income+Rating, data=ISLR::Credit), lm.obj)
+```
+
+#### Interpretations {-}
+
+**Coefficients:**\
+
+  - $\hat{\beta_0}:$ For individuals with Income of \$0 and Rating of 0 points, the average Balance will be `r round(lm.obj$coefficients[1], 4)`
+  - $\hat{\beta_1}:$ For each \$1000 dollar increase in Income, holding Rating at 0, the average Balance will change `r round(lm.obj$coefficients[2], 4)` $\times1000$ dollars
+  - $\hat{\beta_2}:$ For each 1 point increase in Rating, holding Income at \$0, the average Balance will change `r round(lm.obj$coefficients[3], 4)` dollars
+  - $\hat{\beta_3}~(interaction~coefficient):$\
+Per \$1000 increase in Income, the average effectiveness of Raiting will increase by `r round(lm.obj$coefficients[4], 4)` $\times1000$ units
+
+**Effect of Income on Balance:**\
+Per \$1000 increase in Income, holding Rating constant, the average Balance will increase by (`r round(lm.obj$coefficients[2], 4)` $+$ `r round(lm.obj$coefficients[4], 4)` $\times Rating$) dollars
+
+**Effect of Rating on Balance:**\
+Per 1 point increase in Rating, holding Income constant, the average Balance will increase by (`r round(lm.obj$coefficients[3], 4)` $+$ `r round(lm.obj$coefficients[4], 4)` $\times Income$) dollars
+
+In cases where the interaction is insignificant, drop the interaction variable(s) and re-interpret\
+In case interaction term is not statistically significant, it is beneficial to drop it and then only interpret the main effects because the interpretations are more useful and all-encompassing
+```{r}
+lm.obj <- lm(Balance ~ Income + Age + Income:Age, data = ISLR::Credit)
+lm.obj$coefficients
+summary(lm.obj)$coefficients["Income:Age",]
+```
+
+**Effect of Income on Balance:**\
+Per \$1000 increase in Income, holding Rating constant, the average Balance will increase by `r round(lm.obj$coefficients[2], 4)` $\times1000$ dollars
+
+**Effect of Age on Balance:**\
+Per 1 year increase in Age, holding Income constant, the average Balance will increase by `r round(lm.obj$coefficients[3], 4)` dollars
+
+### Numerical and Categorical
+
+#### Dichotomous Variable ($K=2~categories$) {-}
+
+_The [ISLR::Wage][ISLR::Wage] dataset is used to illustrate this concept._
+
+$wage_i = \beta_0+\beta_1age_i+\beta_2D_{jobclass,i}+\epsilon_i=\left\{ \begin{array}{cl}\beta_0+\beta_1age_i+\beta_2+\epsilon_i \\ \beta_0+\beta_1age_i+\epsilon_i \end{array} \right.,$\
+  $\epsilon_i\sim_{ind}N(0,\sigma^2)$\
+  $D_{jobclass,i}=\left\{ \begin{array}{cl}1,&i^{th}~worker~has~Information~job \\ 0,&i^{th}~worker~has~Industrial~job~(baseline/null~case) \end{array} \right.$\
+  
+<b style="color:red">Limitations</b>: Does not allow for different slopes between the quantitative predictor and response.\
+&nspb; same slope means that the effect age has on wage does not depend on job class 
+
+```{r echo=FALSE}
+ggplot2::ggplot(data = ISLR::Wage, ggplot2::aes(age, wage, col=jobclass))+ggplot2::geom_smooth(method = "lm")
+```
+
+Limitation is addressed by adding interaction term $age\times D_{jobclass}$
+
+$wage_i=\beta_0+\beta_1age_i+\beta_2D_{jobclass}+\beta_3(age_i\times D_{jobclass,i})+\epsilon_i,~\epsilon_i\sim_{ind}N(0,\sigma^2)$
+
+$wage_i=\left\{ \begin{array}{cl}\beta_0+\beta_1age_i+\beta_2+\beta_3age_i+\epsilon_i,&i^{th}~worker~has~Information~job \\ \beta_0+\beta_1age_i+\epsilon_i,&i^{th}~worker~has~Industrial~job \end{array} \right.$
+
+$wage_i=\left\{ \begin{array}{cl}(\beta_0+\beta_2)+(\beta_1+\beta_3)age_i+\epsilon_i,&i^{th}~worker~has~Information~job \\ \beta_0+\beta_1age_i+\epsilon_i,&i^{th}~worker~has~Industrial~job \end{array} \right.$
+
+```{r}
+lm.obj <- lm(wage ~ age + jobclass + age:jobclass, data = ISLR::Wage)
+lm.obj <- lm(wage ~ age * jobclass, data = ISLR::Wage)
+```
+
+```{r echo=FALSE}
+knitr::kable(summary(lm.obj)$coefficients, booktabs = T, digits = 4, caption = "Coeficient Summary")
+```
+
+$\hat{wage} =`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[2], 4)`age+`r round(coefficients(lm.obj)[3], 4)`D_{jobclass}+`r round(coefficients(lm.obj)[4], 4)`(age\times D_{jobclass})$
+
+$\hat{wage}=\left\{ \begin{array}{cl}(`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[3], 4)`)+(`r round(coefficients(lm.obj)[2], 4)`+`r round(coefficients(lm.obj)[4], 4)`)age_i+\epsilon_i,&i^{th}~worker~has~Information~job \\ `r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[2], 4)`age_i+\epsilon_i,&i^{th}~worker~has~Industrial~job \end{array} \right.$
+
+$\hat{wage}=\left\{ \begin{array}{cl}`r round(coefficients(lm.obj)[1], 4) + round(coefficients(lm.obj)[3], 4)`+`r round(coefficients(lm.obj)[2], 4) + round(coefficients(lm.obj)[4], 4)`age_i+\epsilon_i,&i^{th}~worker~has~Information~job \\ `r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[2], 4)`age_i+\epsilon_i,&i^{th}~worker~has~Industrial~job \end{array} \right.$
+  
+**Is there a significant interaction between Age and Jobclass?**\
+$H_0:\beta_3=0$\
+$H_a:\beta_3\ne0$\
+There is no significant interaction between Age and Jobclass because the p-value (`r round(summary(lm.obj)$coefficients["age:jobclass2. Information","Pr(>|t|)"], 4)`) > $\alpha=0.05$. Therefore we must drop the interaction term ($\beta_3$) and re-fit the model with just the main effects ($\beta_1,\beta_2$). Interpret these main effects.
+
+##### Interpretations {-}
+
+**Coefficients:**\
+
+  - $\hat{\beta_0}:$ For individuals with Income of \$0 and Rating of 0 points, the average Balance will be `r round(lm.obj$coefficients[1], 4)`
+  - $\hat{\beta_1}:$ Per 1 year increase in age for Industrial workers, the average wage will increase by `r round(lm.obj$coefficients[2], 4)` $\times1000$ dollars
+  - $\hat{\beta_2}:$ The wage for Information workers will be `r round(lm.obj$coefficients[3], 4)` $\times1000$ dollars higher than for Industrial workers, given that age is 0
+  - $\hat{\beta_3}~(interaction~coefficient):$\
+  The slope of $Wage\sim Age$ linear relationship for Information workers is is lower by `r abs(round(lm.obj$coefficients[4], 4))` than that slope for Industrial workers
+
+**Effect of Age on Wage:**\
+Per 1 year increase in Income, holding Jobclass constant, the average Wage will increase by (`r round(lm.obj$coefficients[2], 4)` $+$ `r round(lm.obj$coefficients[4], 4)` $\times D_{jobclass}$) dollars
+
+**Effect of Jobclass on Balance:**\
+The average wage for Information workers will be (`r round(lm.obj$coefficients[3], 4)` $+$ `r round(lm.obj$coefficients[4], 4)` $\times age$)$\times1000$ dollars higher than for Industrial workers, holding age constant
+
+$\hat{Balance}=200.6+6.2Income+476.7D_{student}-2(income\times D_{student})$
+
+$\hat{Balance}=\left\{ \begin{array}{cl}200.6+6.2income+476.7-2income,&(student) \\ 200.6+6.2income,&(not~student) \end{array} \right.$
+
+**Do NOT** put so much focus on the **intercept** or **$\beta_3$** because the <b style="color:red">cases are limiting</b>.
+
+#### Polytomous Variable ($K>2~categories$)
+
+_The [ISLR::Wage][ISLR::Wage] dataset is used to illustrate this concept._
+
+$wage_i = \beta_0+\beta_1age_i+\beta_2D_{married,i}+\beta_3D_{widowed,i}+\beta_4D_{divorced,i}+\beta_5D_{separated,i}+ \\ \beta_6(age\times D_{married,i})+\beta_7(age\times D_{widowed,i})+\beta_8(age\times D_{divorced,i})+\beta_9(age\times D_{separated,i})+\epsilon_i$\
+$wage_i = \left\{ \begin{array}{cl}(\beta_0+\beta_2)+(\beta_1+\beta_6)age_i+\epsilon_i,&i^{th}~person~is~married \\ (\beta_0+\beta_3)+(\beta_1+\beta_7)age_i+\epsilon_i,&i^{th}~person~is~widowed \\ (\beta_0+\beta_4)+(\beta_1+\beta_8)age_i+\epsilon_i,&i^{th}~person~is~divorced \\ (\beta_0+\beta_5)+(\beta_1+\beta_9)age_i+\epsilon_i,&i^{th}~person~is~separated \\ \beta_0+\beta_1age_i+\epsilon_i,&i^{th}~person~never~married \end{array} \right.$
+
+$,~\epsilon_i\sim_{ind}N(0,\sigma^2)$\
+  $D_{married,i}=\left\{ \begin{array}{cl}1,&marital~status~of~i^{th}~worker~is~married \\ 0,&otherwise \end{array} \right.$\
+  $D_{widowed,i}=\left\{ \begin{array}{cl}1,&marital~status~of~i^{th}~worker~is~widowed \\ 0,&otherwise \end{array} \right.$\
+  $D_{divorced,i}=\left\{ \begin{array}{cl}1,&marital~status~of~i^{th}~worker~is~divorced \\ 0,&otherwise \end{array} \right.$\
+  $D_{separated,i}=\left\{ \begin{array}{cl}1,&marital~status~of~i^{th}~worker~is~separated \\ 0,&otherwise \end{array} \right.$\
+
+<b style="color:brown">Effect Displays</b>\
+Before fit lm, plot and look for difference in slope. Similar slope indicates insignificant interaction effect
+
+```{r echo=FALSE}
+ggplot2::ggplot(data = ISLR::Wage, ggplot2::aes(age, wage, col=maritl)) + ggplot2::geom_smooth(method="lm")
+```
+
+```{r}
+lm.obj <- lm(wage ~ age + maritl + age:maritl, data = ISLR::Wage)
+lm.obj <- lm(wage ~ age * maritl, data = ISLR::Wage)
+```
+
+```{r echo=FALSE}
+knitr::kable(summary(lm.obj)$coefficients, booktabs = T, digits = 4, caption = "Coeficient Summary")
+```
+
+
+$wage_i = `r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[2], 4)`age_i+`r round(coefficients(lm.obj)[3], 4)`D_{married,i}+`r round(coefficients(lm.obj)[4], 4)`D_{widowed,i}+`r round(coefficients(lm.obj)[5], 4)`D_{divorced,i}+`r round(coefficients(lm.obj)[6], 4)`D_{separated,i}+ \\ `r round(coefficients(lm.obj)[7], 4)`(age\times D_{married,i})+`r round(coefficients(lm.obj)[8], 4)`(age\times D_{widowed,i})+`r round(coefficients(lm.obj)[9], 4)`(age\times D_{divorced,i})+`r round(coefficients(lm.obj)[10], 4)`(age\times D_{separated,i})+\epsilon_i$
+
+$wage_i = \left\{ \begin{array}{cl}(`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[3], 4)`)+(`r round(coefficients(lm.obj)[2], 4)`+`r round(coefficients(lm.obj)[7], 4)`)age_i+\epsilon_i,&i^{th}~person~is~married \\ (`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[4], 4)`)+(`r round(coefficients(lm.obj)[2], 4)`+`r round(coefficients(lm.obj)[8], 4)`)age_i+\epsilon_i,&i^{th}~person~is~widowed \\ (`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[5], 4)`)+(`r round(coefficients(lm.obj)[2], 4)`+`r round(coefficients(lm.obj)[9], 4)`)age_i+\epsilon_i,&i^{th}~person~is~divorced \\ (`r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[6], 4)`)+(`r round(coefficients(lm.obj)[2], 4)`+`r round(coefficients(lm.obj)[10], 4)`)age_i+\epsilon_i,&i^{th}~person~is~separated \\ `r round(coefficients(lm.obj)[1], 4)`+`r round(coefficients(lm.obj)[2], 4)`age_i+\epsilon_i,&i^{th}~person~never~married \end{array} \right.$\
+$,~\epsilon_i\sim_{ind}N(0,\sigma^2)$
+
+$wage_i = \left\{ \begin{array}{cl}`r round(coefficients(lm.obj)[1], 4)+round(coefficients(lm.obj)[3], 4)`+`r round(coefficients(lm.obj)[2], 4)+round(coefficients(lm.obj)[7], 4)`age_i+\epsilon_i,&i^{th}~person~is~married \\ `r round(coefficients(lm.obj)[1], 4)+round(coefficients(lm.obj)[4], 4)`+`r round(coefficients(lm.obj)[2], 4)+round(coefficients(lm.obj)[8], 4)`age_i+\epsilon_i,&i^{th}~person~is~widowed \\ `r round(coefficients(lm.obj)[1], 4)+round(coefficients(lm.obj)[5], 4)`+`r round(coefficients(lm.obj)[2], 4)+round(coefficients(lm.obj)[9], 4)`age_i+\epsilon_i,&i^{th}~person~is~divorced \\ `r round(coefficients(lm.obj)[1], 4)+round(coefficients(lm.obj)[6], 4)`+`r round(coefficients(lm.obj)[2], 4)+round(coefficients(lm.obj)[10], 4)`age_i+\epsilon_i,&i^{th}~person~is~separated \\ `r round(coefficients(lm.obj)[1], 4)` + `r round(coefficients(lm.obj)[2], 4)`age_i+\epsilon_i,&i^{th}~person~never~married \end{array} \right.$
+$,~\epsilon_i\sim_{ind}N(0,\sigma^2)$
+
+**Is there a significant interaction between Age and Marital Status?**\
+$H_0:\beta_6=\dots=\beta_9=0$\
+$H_a:\{at~least~one~\beta_j\ne0,~j=6,\dots,9\}$\
+
+<b style="color:brown">** Note **</b>\
+p-values for interaction effect is high (if all are high, then incremental f-test via anova won't be significant)
+
+```{r}
+anova(lm(wage ~ age + maritl, data = ISLR::Wage), lm.obj)
+```
+
+There is a significant interaction between Age and Maritl because the p-value (`r anova(lm(wage ~ age + maritl, data = ISLR::Wage), lm.obj)[2,6]`) < $\alpha=0.05$.
+
+If interaction effects is not significant, drop it, re-evaluate and interpret main effects
+
+
+

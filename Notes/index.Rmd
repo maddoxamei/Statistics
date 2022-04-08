@@ -1,0 +1,47 @@
+---
+title: "Comprehensive Statistics Notes"
+author: "Mei Maddox"
+date: "Last Compiled on `r format(Sys.Date(), format='%b %d %Y')`"
+description: |
+  This is a minimal example of using the bookdown package to write a book.
+  set in the _output.yml file.
+  The HTML output format for this example is bookdown::gitbook,
+output:
+  bookdown::pdf_book: default
+  bookdown::gitbook: default
+  bookdown::epub_book: default
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [packages.bib]
+biblio-style: apalike
+nocite: '@*'
+link-citations: yes
+github-repo: maddoxamei/Statistics
+---
+
+```{r include=FALSE}
+# automatically create a bib database for R packages
+knitr::write_bib(c(
+  .packages(), 'bookdown', 'knitr', 'rmarkdown'
+), 'packages.bib')
+
+help_console <- function(topic, format=c("text", "html", "latex", "Rd"),
+                         lines=NULL, before=NULL, after=NULL) {  
+  format=match.arg(format)
+  if (!is.character(topic)) topic <- deparse(substitute(topic))
+  helpfile <- utils:::.getHelpFile(help(topic))
+  helpfile <- purrr::discard(helpfile, ~attr(.x, "Rd_tag") %in% c("\\examples", "\\usage"))
+
+  hs <- capture.output(switch(format, 
+                              text=tools:::Rd2txt(helpfile),
+                              html=tools:::Rd2HTML(helpfile),
+                              latex=tools:::Rd2latex(helpfile),
+                              Rd=tools:::prepare_Rd(helpfile)
+                              )
+                      )
+  if(!is.null(lines)) hs <- hs[lines]
+  hs <- c(before, hs, after)
+  cat(hs, sep="\n")
+  invisible(hs)
+}
+```

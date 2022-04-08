@@ -1,0 +1,204 @@
+---
+title: "Statistics Project"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(magrittr)
+
+# Read in mass mobilization dataset
+df <- read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSxIiUIhtrrcaJcrwcxzglHzG6st4dIVWiHtS-7lP6MBNp05U0fv2Sbo26ebCjLYPAnJqzAaaluS-XU/pub?gid=106237406&single=true&output=csv") %>%
+  tibble::as_tibble()
+
+# Column name alteration
+col.names <- list(ccode='country_code', 
+                  protestnumber='protest_number',
+                  
+                  # Dates
+                  startday='start_day',
+                  startmonth='start_month',
+                  startyear='start_year',
+                  endday='end_day',
+                  endmonth='end_month',
+                  endyear='end_year',
+                  
+                  # state responses
+                  accomodation='accommodation',
+                  
+                  #protest information
+                  protesterviolence='protester_violence',
+                  protesteridentity='protester_identity',
+                  
+                  #protester_demands
+                  price.increases..tax.policy='price_increases_or_tax_policy',
+                  political.behavior..process='political_behavior_or_proces')
+
+colnames(df) <- sapply(colnames(df), function(x){
+  idx <- which(names(col.names)==x)
+  if( length(idx) == 0 ) return( gsub('\\.', '_', x) )
+  else return( col.names[idx] )
+})
+
+
+protester_demands_variables <- df %>% dplyr::select("labor_wage_dispute":"social_restrictions") %>% colnames()
+
+state_responses_variables <- c('accommodation','ignore','arrests','crowd_dispersal','beatings','shootings','killings')
+
+size.factors<-c('<50','50-99','100-999','1000-1999','2000-4999','5000-10000','>10000')
+
+df %<>% 
+  # Remove non-protests
+  dplyr::filter(protest == 1) %>% 
+  
+  # Remove the protest column
+  dplyr::select(-protest) %>%
+  
+  # Convert the following columns to factors
+  dplyr::mutate_at(c("country", "region", "country_code", "protester_violence", "participants_category"), as.factor) %>%
+  
+  # Force protester demands and state response to be binary
+  dplyr::mutate_at(20:31, function(x) as.integer(replace(x, x>1, 1))) %>%
+  
+  # Create date columns
+  tidyr::unite("start_date", start_year:start_day, sep = '/', remove = F) %>% 
+  tidyr::unite("end_date", end_year:end_day, sep = '/', remove = F) %>%
+  dplyr::mutate_at(c("start_date", "end_date"), as.Date) %>%
+  
+  # Establish protest duration
+  dplyr::mutate(duration=end_date-start_date+1)
+
+# Rename levels 
+levels(df$protester_violence) <- c("Non-Violent", "Violent")
+#Add ordering to participants_category
+df$participants_category %<>% ordered(levels=size.factors)
+
+# Convert state responses to corresponding values or NA
+for( idx in 1:length(state_responses_variables) ){
+  df %<>% dplyr::mutate_at(state_responses_variables[idx], function(x) ifelse(x == 1, yes = idx - 2, no = NA))
+}
+
+# Create use of force metric
+df %<>%  dplyr::mutate(use_of_force = (rowMeans(.[state_responses_variables], na.rm = T)+pmax(!!!rlang::syms(state_responses_variables), na.rm = T))/2)
+
+# Create hemisphere metric
+df %<>% dplyr::mutate(hemisphere = ifelse(grepl('America', .[["region"]]), yes = "west", no = "east"))
+```
+
+## Part 2
+
+
+```{r}
+ggplot2::ggplot(df, ggplot2::aes(use_of_force, hemisphere, fill= hemisphere)) + ggplot2::geom_boxplot() + ggplot2::ylab("Hemisphere") + ggplot2::xlab("Use of Force") + ggplot2::ggtitle("Use of Force by Hemisphere")
+
+
+ggplot2::ggplot(df, ggplot2::aes(use_of_force, fill=hemisphere)) + ggplot2::geom_density(alpha=.2, size=1.05) + ggplot2::ylab("Density") + ggplot2::xlab("Use of Force") + ggplot2::ggtitle("Use of Force by Hemisphere")
+
+t.test(df$use_of_force~df$hemisphere)
+```
+
+
+```{r}
+# To check the validity of inference when sampling from such population, 
+#    for VARIOUS SAMPLE SIZES, 
+#  we proceed to:
+#    - Treat the data as our population, calculate its mean mu_pop (our KNOWN population mean).
+#    - Take samples of a fixed size from it, and test H0: mu = mu_pop for them (which we KNOW to be TRUE).
+#    - Check how frequently H0 gets falsely rejected for 0.05 significance level.
+
+ggplot2::ggplot(df, ggplot2::aes(use_of_force, fill= cut(use_of_force, 7))) + ggplot2::geom_histogram(bins=15) + ggplot2::ylab("Frequency") + ggplot2::xlab("") + ggplot2::ggtitle("Use of Force Raw Values")+ ggplot2::geom_vline(xintercept=mean(df$use_of_force, na.rm = T))
+
+boxplot(df$use_of_force, horizontal = T)
+title("Use of Force")
+
+
+n.sim <- 10000
+p.values <- numeric(n.sim)
+ci.95 <- matrix(0, nrow=n.sim, ncol=2)
+mu0 <- mean(df$use_of_force, na.rm = T)
+
+samp.size <- 100
+for (j in 1:n.sim){
+  x <- sample(df$use_of_force, samp.size)
+  p.values[j] <- t.test(x, mu=mu0)$p.value
+  ci.95[j,] <- t.test(x, mu=mu0)$conf.int
+}
+
+# Type I error is generally a bit higher than expected (0.05).
+mean(p.values < 0.05)
+mean(ci.95[,1] < mu0 & ci.95[,2] > mu0)
+
+ggplot2::ggplot() + ggplot2::aes(p.values, fill=p.values<0.05) + ggplot2::geom_histogram() + ggplot2::ylab("Frequency") + ggplot2::xlab("p-value") + ggplot2::ggtitle("Histogram of p-values") + ggplot2::geom_vline(xintercept=mean(p.values < 0.05), linetype="dashed", size=1) + ggplot2::annotate(x=.25,y=+Inf,label=paste("P( Type 1 Error) =",mean(p.values < 0.05)),vjust=3.5,geom="label")
+
+
+ci.95 %>% tibble::as_tibble() %>% dplyr::mutate(mean=rowMeans(.)) %>% tibble::rowid_to_column() %>% ggplot2::ggplot(ggplot2::aes(x=mean, y=rowid, color=V1<mu0 & V2>mu0)) + ggplot2::geom_errorbar(ggplot2::aes(xmin=V1, xmax=V2)) + ggplot2::theme(axis.text.y=ggplot2::element_blank(),axis.ticks.y=ggplot2::element_blank()) + ggplot2::ylab("Trials") + ggplot2::xlab("Confidence Interval") + ggplot2::ggtitle("Use of Force Coverage") + ggplot2::geom_vline(xintercept=mean(mu0), linetype="dashed", size=1) + ggplot2::annotate(x=mu0,y=+Inf,label=paste("Coverage =",mean(ci.95[,1] < mu0 & ci.95[,2] > mu0)),vjust=3,geom="label") + ggplot2::scale_color_discrete(name = "Mu_0 Relative to CI", labels = c("Not Contained", "Contained"))
+```
+
+
+
+$\mu=\{average~use~of~force\}$
+$H_0:\mu=0~~~vs.~~~H_a:\mu\ne0$
+```{r}
+x <- t.test(df$use_of_force, mu=2)
+
+# TS
+x$statistic
+
+# p-value
+x$p.value
+```
+
+1. $TS=$ `r x$statistic`
+2. If $H_0$ were true, we would expect TS to take on values according to the t-distribution with `r x$parameter` degrees of freedom.
+3. $p-value=$ `r `
+
+Due to such a small p-value, have strong evidence to reject the null hypothesis and lean towards the alternative hypothesis (statistically significant)
+```{r}
+# Cohen d
+abs(mean(df$use_of_force, na.rm = T) - 0)/sd(df$use_of_force, na.rm = T)
+```
+Large practical effect size, therefore has high practical significance
+
+## Part 3
+
+$\mu=\{average~use~of~force\}$
+$H_0:\mu=0~~~vs.~~~H_a:\mu\ne0$
+```{r}
+
+ggplot2::ggplot(df, ggplot2::aes(protester_violence, fill=protester_violence=="Non-Violent")) + ggplot2::geom_bar() + ggplot2::ylab("Frequency") + ggplot2::xlab("") + ggplot2::ggtitle("Protester Violence")
+
+x <- table(df$protester_violence) %>% binom.test(p=.7)
+
+# TS
+x$statistic
+
+# p-value
+x$p.value
+```
+
+1. $TS=$ `r x$statistic`
+2. If $H_0$ were true, we would expect TS to take on values according to the t-distribution with `r x$parameter` degrees of freedom.
+3. $p-value=$ `r `
+
+Due to such a small p-value, have strong evidence to reject the null hypothesis and lean towards the alternative hypothesis (statistically significant)
+```{r}
+# Cohen d
+abs(mean(df$use_of_force, na.rm = T) - 2)/sd(df$use_of_force, na.rm = T)
+```
+Medium practical effect size, therefore has moderate practical significance
+
+Small practical effect size, therefore has low practical significance
+
+
+
+
+```{r}
+df %>% dplyr::select_if(is.numeric) %>% dplyr::select(-id, -accommodation) %>% dplyr::mutate(n_demands = rowSums(.[protester_demands_variables])) %>% replace(is.na(.), 0) %>% cor() %>% round(4) %>% highcharter::hchart(type="heatmap") %>%
+highcharter::hc_plotOptions(heatmap=list(dataLabels=list(enabled=TRUE)))
+```
+

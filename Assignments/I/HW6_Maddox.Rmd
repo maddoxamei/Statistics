@@ -1,0 +1,88 @@
+---
+title: "Homework #6, Mei Maddox."
+author: "Mei Maddox   \n"
+output:
+  pdf_document: default
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+
+**Submit the solution on Canvas into the corresponding assignment (e.g. "Homework #1") in the form of R Markdown report, knitted into either of the available formats (HTML, pdf or Word). Provide only code and output. NO NEED TO COPY THE PROBLEM FORMULATION (!)**
+
+## Problem 1
+
+**5.16** Teacher gives true-false pop quiz with 10 questions
+a) The number of possible outcomes is $2^n = 2^{10} = 1024$, where n is equal to the number of questions.
+
+b) The complement of getting at least one of the questions wrong is getting all the questions correct. The probability of this occurring is $1/1024$.
+
+c) The probability of the getting at least one question wrong is equivalent to $\frac{Number Outcomes In Event}{Total Number Of Outcomes} = \frac{1023}{1024} \approx 0.999$ 
+
+**5.23**
+```{r echo=FALSE}
+x <- matrix(c(412368, 162527, 510, 1601), nrow = 2, dimnames = list(c("Y", "N"), c("S", "D")))
+x
+props <- prop.table(x)
+props
+```
+
+a) The sample space is {$YS, YD, NS, ND$}. 
+b) 
+  - i: $P(D) = P(\{YD, ND\}) \approx$ `r sum(props[,"D"])`
+  - ii: $P(N) = P(\{NS, ND\}) \approx$ `r sum(props["N",])`
+
+c) Probability that an individual did not wear a seat belt and died: $P(N \cap D) \approx$ `r props["N","D"]`.
+
+d) If the events were independent then the probability could be calculated as follows: $P(N \cap D) = P(N) \times P(D) \approx$ `r sum(props[,"D"])*sum(props["N",])`. The events are are _NOT_ independent because $P(N \cap D) \ne P(N) \times P(D)$. In other words, the number of deaths is dependent on whether or not they wore a seatbelt.
+
+**5.27**
+a) The sample space is $\{YYY, YYN, YNY, YNN, NYY, NYN, NNY, NNN\}$. The probability for each outcome is 1/8.
+
+b) The probability of at least one sale to the three customers is $P(\{YYY, YYN, YNY, YNN, NYY, NYN, NNY\}) = 7/8 =$ `r 7/8`.
+
+c) Assumed that each outcome is independent of eachother. In other words, the sale condition for one customer does not affect the sale condition for another customer. In cases where there is a relationship between two or more of the three customers, the decision of one could affect the decision of another.
+
+**5.30**
+Note, that the proportions in the given table do not actually sum to 1.
+```{r echo=FALSE}
+props <- matrix(c(.9556,.0326,.0022, .0085, .0009, .0003), ncol = 2, dimnames = list(c("lowest", "middle", "highest"), c("Y", "N")))
+props
+```
+
+a) $P(Y|lowest) = \frac{P(Y \cap lowest)}{P(lowest)} \approx$ `r props["lowest","Y"]/sum(props["lowest",])`
+
+b) $P(lowest|Y) = \frac{P(Y \cap lowest)}{P(Y)} \approx$ `r props["lowest","Y"]/sum(props[,"Y"])`
+
+**5.31**
+a) $P(Christian) = \frac{57199+36148+16834+11366+51855}{228182} = \frac{173402}{228182} \approx$ `r 173402/228182`
+
+b) $P(Catholic | Christian) = \frac{57199}{173402} \approx$ `r 0.3298636`
+
+c) $P(No Religion | Individual Answered) = \frac{34169}{228182} \approx$ `r 34169/228182`
+
+**5.39**
+```{r echo=FALSE}
+x <- matrix(c(69, 78, 73, 80, 4, 13), nrow = 2, dimnames = list(c("Male", "Female"), c("Very Happy", "Pretty Happy", "Not Happy")))
+x
+props <- prop.table(x)
+props
+```
+
+a) The probability that an adult is very happy in their relationship is $P(Very Happy) = 147/317 \approx$ `r 147/317`
+
+b) 
+  - i: $P(Very Happy | Male) = \frac{P(Very Happy \cap Male)}{P(Male)} = 69/147 \approx$ `r 69/147`.
+  - ii: $P(Very Happy | Female) = \frac{P(Very Happy \cap Female)}{P(Female)} = 78/171 \approx$ `r 78/171`
+
+c) Although $P(Very Happy \cap Male) = \frac{69}{317} \approx$ `r 0.2135756` $\ne P(Very Happy) \times P(Male) = \frac{147}{317} \times \frac{146}{317} \approx$ `r (147/317) * (146/317)`, the values are very close so independence can be assumed.
+
+**5.40**
+41 first serves, of which 28 were good, and three double faults.
+
+a) $P(GoodFirst) = 28/41 \approx$ `r 28/41`.
+
+b) $P(FaultSecond | FaultFirst) = \frac{P(FaultSecond \cap FaultFirst)}{P(FaultFirst)} = \frac{3}{41-28} \approx$ `r 3/(41-28)`
+
+c) The percentage of double faults in her serves is $\frac{3}{41} \times 100 \approx$ `r 3/41*100`.
